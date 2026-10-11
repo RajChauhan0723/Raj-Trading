@@ -2036,12 +2036,11 @@ function renderScannerList() {
   const container = $("#scannerList");
   let filtered = masterWatchlist;
 
-  if (scannerCategory !== "all") {
-    filtered = filtered.filter(x => x.cat === scannerCategory);
-  }
   if (scannerFilterQuery) {
     const q = scannerFilterQuery.toLowerCase();
-    filtered = filtered.filter(x => x.symbol.toLowerCase().includes(q) || x.name.toLowerCase().includes(q));
+    filtered = filtered.filter(x => x.symbol.toLowerCase().includes(q) || x.name.toLowerCase().includes(q) || (x.cat && x.cat.toLowerCase().includes(q)));
+  } else if (scannerCategory !== "all") {
+    filtered = filtered.filter(x => x.cat === scannerCategory);
   }
 
   $("#scannerCount").textContent = `${filtered.length} Assets`;
