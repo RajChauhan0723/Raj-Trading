@@ -1348,7 +1348,7 @@ aside.scanner-box {
       <div class="scanner-tabs">
         <button class="scanner-tab-btn active" data-cat="all">All (75)</button>
         <button class="scanner-tab-btn" data-cat="index">Indices</button>
-        <button class="scanner-tab-btn" data-cat="commodity">MCX</button>
+        <button class="scanner-tab-btn" data-cat="commodity">Commodities</button>
         <button class="scanner-tab-btn" data-cat="stocks">Top F&O</button>
         <button class="scanner-tab-btn" data-cat="crypto">Crypto</button>
       </div>
@@ -1719,8 +1719,10 @@ const PREV_CLOSE_PRICES = {
   "MIDCPNIFTY": 12445.46,
   "SENSEX": 81388.40,
   
-  // Commodities (MCX)
+  // Commodities (MCX & Global)
   "GOLD": 76450.00,
+  "GOLDM": 76420.00,
+  "XAUUSD": 2658.50,
   "SILVER": 91200.00,
   "CRUDEOIL": 5446.27,
   "NATURALGAS": 283.81,
@@ -1786,6 +1788,8 @@ const DEFAULT_CHANGES = {
   "MIDCPNIFTY": { chg: 22.59, pct: 0.18 },
   "SENSEX": { chg: 480.20, pct: 0.59 },
   "GOLD": { chg: 310.00, pct: 0.41 },
+  "GOLDM": { chg: 305.00, pct: 0.40 },
+  "XAUUSD": { chg: 13.30, pct: 0.50 },
   "SILVER": { chg: 324.38, pct: 0.22 },
   "CRUDEOIL": { chg: -18.00, pct: -0.33 },
   "NATURALGAS": { chg: 2.68, pct: 0.95 },
@@ -1886,12 +1890,14 @@ async function loadMasterWatchlist() {
       });
     });
 
-    // 2. Commodities (MCX)
+    // 2. Commodities (MCX & Global)
     [
-      { symbol: "NATURALGAS", name: "Natural Gas", cat: "commodity" },
-      { symbol: "GOLD", name: "Gold (MCX)", cat: "commodity" },
+      { symbol: "GOLD", name: "Gold (MCX 1kg)", cat: "commodity" },
+      { symbol: "GOLDM", name: "Gold Mini (100g)", cat: "commodity" },
+      { symbol: "XAUUSD", name: "Spot Gold (USA)", cat: "commodity" },
       { symbol: "SILVER", name: "Silver (MCX)", cat: "commodity" },
-      { symbol: "CRUDEOIL", name: "Crude Oil", cat: "commodity" }
+      { symbol: "CRUDEOIL", name: "Crude Oil", cat: "commodity" },
+      { symbol: "NATURALGAS", name: "Natural Gas", cat: "commodity" }
     ].forEach(item => {
       const liveObj = [...(com?.active || []), ...(com?.waiting || [])].find(x => x.symbol === item.symbol);
       const rawPrice = liveObj ? liveObj.price : null;
@@ -2047,15 +2053,15 @@ function renderScannerList() {
 
   container.innerHTML = filtered.map(x => {
     const isAct = x.symbol === activeChartSymbol;
-    const isCrypto = x.cat === "crypto" || x.symbol.includes("BTC");
+    const isUsd = x.cat === "crypto" || x.symbol.includes("BTC") || x.symbol === "XAUUSD";
     const p = (x.price != null && x.price > 0) ? x.price : (PREV_CLOSE_PRICES[x.symbol] || 500);
-    const priceDisplay = (isCrypto ? "$" : "₹") + fmt(p);
+    const priceDisplay = (isUsd ? "$" : "₹") + fmt(p);
     const chgVal = (x.change != null) ? x.change : (DEFAULT_CHANGES[x.symbol]?.chg ?? 0);
     const pctVal = (x.change_pct != null) ? x.change_pct : (DEFAULT_CHANGES[x.symbol]?.pct ?? 0);
     const isUp = chgVal > 0;
     const isDown = chgVal < 0;
     const chgClass = isUp ? "up" : isDown ? "down" : "flat";
-    const chgText = fmtChg(chgVal, pctVal, isCrypto);
+    const chgText = fmtChg(chgVal, pctVal, isUsd);
 
     // Action badge: ONLY show BUY (green) or SELL (red). NO "WAIT" badges!
     let badgeHtml = "";
@@ -2113,7 +2119,7 @@ async function loadActiveSymbol(sym) {
 
   const cachedItem = masterWatchlist.find(x => x.symbol === sym);
   const pInitial = (cachedItem && cachedItem.price) || PREV_CLOSE_PRICES[sym];
-  const isCryptoInitial = sym.toUpperCase().includes("BTC") || (cachedItem && cachedItem.cat === "crypto");
+  const isCryptoInitial = sym.toUpperCase().includes("BTC") || (cachedItem && cachedItem.cat === "crypto") || sym.toUpperCase() === "XAUUSD";
   const initPriceDisp = pInitial ? ((isCryptoInitial ? "$" : "₹") + fmt(pInitial)) : "-";
   const defChg = DEFAULT_CHANGES[sym] || { chg: 0, pct: 0 };
   const chgVal = (cachedItem && cachedItem.change != null) ? cachedItem.change : defChg.chg;
