@@ -4,8 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#030407">
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" type="image/jpeg" href="/logo.jpg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RTW Pro">
+<meta name="application-name" content="Raj Trading World">
+<link rel="manifest" href="/manifest.webmanifest?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=2">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=2">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
+<link rel="icon" type="image/jpeg" href="/logo.jpg?v=2">
 <title>Raj Trading World — Institutional Gold &amp; Black Terminal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -848,6 +857,50 @@ aside.scanner-box {
   font-size: 13px;
 }
 
+/* Pull to Refresh Mobile Component */
+.pull-refresh-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 0px;
+  overflow: hidden;
+  opacity: 0;
+  transition: height 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s;
+  color: #ffd700;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-bottom: 0px;
+  user-select: none;
+  background: rgba(212, 175, 55, 0.06);
+  border-radius: 10px;
+  border: 1px dashed transparent;
+}
+.pull-refresh-indicator.visible {
+  opacity: 1;
+  border-color: rgba(212, 175, 55, 0.3);
+  margin-bottom: 8px;
+}
+.pull-refresh-spinner {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffd700;
+  transition: transform 0.1s ease;
+}
+.pull-refresh-spinner svg {
+  stroke: currentColor;
+}
+.pull-refresh-spinner.spinning {
+  animation: pullSpin 0.75s linear infinite;
+}
+@keyframes pullSpin {
+  100% { transform: rotate(360deg); }
+}
+
 /* ==========================================================
    MOBILE & TABLET RESPONSIVE ENGINE (PHONE SCREEN ADAPTATION)
    ========================================================== */
@@ -950,7 +1003,9 @@ aside.scanner-box {
   }
 
   .workspace-scroll {
-    padding: 10px 10px 90px 10px;
+    padding: 8px 10px 90px 10px;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .chart-card {
@@ -979,6 +1034,7 @@ aside.scanner-box {
   .chart-controls-box {
     width: 100%;
     justify-content: space-between;
+    gap: 6px;
   }
   .chart-mode-group {
     font-size: 11px;
@@ -1004,14 +1060,21 @@ aside.scanner-box {
     font-size: 10.5px;
   }
 
+  /* Substantially Expanded Chart on Phone */
   .chart-canvas-box {
-    height: clamp(250px, 42vh, 310px);
-    min-height: 250px;
-    border-radius: 8px;
+    height: clamp(380px, 58vh, 520px);
+    min-height: 380px;
+    border-radius: 10px;
+    transition: height 0.25s ease;
   }
   .tv-embed-wrap {
-    min-height: 280px;
-    height: clamp(280px, 45vh, 340px);
+    min-height: 380px;
+    height: clamp(380px, 58vh, 520px);
+    transition: height 0.25s ease;
+  }
+  .chart-canvas-box.expanded, .tv-embed-wrap.expanded {
+    height: clamp(540px, 78vh, 720px) !important;
+    min-height: 540px !important;
   }
 
   .ravan-hud-bar {
@@ -1075,8 +1138,16 @@ aside.scanner-box {
     padding: 0 8px;
   }
   .chart-canvas-box {
-    height: clamp(230px, 40vh, 290px);
-    min-height: 230px;
+    height: clamp(360px, 56vh, 490px);
+    min-height: 360px;
+  }
+  .tv-embed-wrap {
+    min-height: 360px;
+    height: clamp(360px, 56vh, 490px);
+  }
+  .chart-canvas-box.expanded, .tv-embed-wrap.expanded {
+    height: clamp(540px, 78vh, 720px) !important;
+    min-height: 540px !important;
   }
   .grid-4 {
     grid-template-columns: repeat(2, 1fr);
@@ -1180,6 +1251,13 @@ aside.scanner-box {
 
     <!-- Workspace Scrollable Area -->
     <div class="workspace-scroll" id="workspaceScroll">
+      <!-- Pull To Refresh Indicator for Mobile -->
+      <div class="pull-refresh-indicator" id="pullRefreshIndicator">
+        <div class="pull-refresh-spinner" id="pullRefreshSpinner">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+        </div>
+        <span class="pull-refresh-text" id="pullRefreshText">Pull down to refresh...</span>
+      </div>
       <div id="mainViewContainer"></div>
     </div>
   </main>
@@ -1376,7 +1454,8 @@ function drawChart(cv, d) {
     g.fillStyle = "#8f9bb8"; g.font = "14px 'Plus Jakarta Sans'"; g.fillText("Data loading / Market closed...", 20, 30);
     return;
   }
-  const PR = 72, PB = 24, pw = W - PR, ph = H - PB;
+  const isMobile = W < 520;
+  const PR = isMobile ? 56 : 72, PB = isMobile ? 20 : 24, pw = W - PR, ph = H - PB;
   let lo = Math.min(...cs.map(c => c.l)), hi = Math.max(...cs.map(c => c.h));
   (d.levels || []).forEach(l => { lo = Math.min(lo, l.price); hi = Math.max(hi, l.price); });
 
@@ -1388,7 +1467,7 @@ function drawChart(cv, d) {
   }
 
   const pad = (hi - lo) * 0.08 || 1; lo -= pad; hi += pad;
-  const y = p => ph - (p - lo) / (hi - lo) * ph, step = pw / cs.length, bw = Math.max(1, step * 0.65);
+  const y = p => ph - (p - lo) / (hi - lo) * ph, step = pw / cs.length, bw = Math.max(2, step * 0.72);
 
   // Background Grid Lines & Y-axis labels
   g.font = "11px 'JetBrains Mono'"; g.lineWidth = 1;
@@ -1722,6 +1801,9 @@ async function loadActiveSymbol(sym) {
                 ${tf}
               </button>
             `).join("")}
+            <button class="scanner-tab-btn" id="btnToggleChartSize" style="font-size:11px;padding:4px 8px;color:#ffd700;font-weight:700" title="Expand chart height for mobile viewing">
+              ⤢ Zoom
+            </button>
             <a id="centerTVLink" href="https://www.tradingview.com/chart/?symbol=${sym}" target="_blank" rel="noopener" class="scanner-tab-btn" style="color:var(--tx-muted);text-decoration:none" title="Open full chart in new tab">
               ↗
             </a>
@@ -1838,8 +1920,23 @@ async function loadActiveSymbol(sym) {
       if (lastChartData) {
         drawChart($("#centerCanvas"), lastChartData);
       }
-    };
   });
+
+  // Bind Chart Size Toggle for mobile
+  const btnZoom = $("#btnToggleChartSize");
+  if (btnZoom) {
+    btnZoom.onclick = () => {
+      const box = $("#chartBoxArea");
+      const tv = $("#tvEmbedContainer");
+      const isExp = box.classList.toggle("expanded");
+      if (tv) tv.classList.toggle("expanded", isExp);
+      btnZoom.textContent = isExp ? "⤡ Normal" : "⤢ Zoom";
+      btnZoom.classList.toggle("active", isExp);
+      if (lastChartData && chartMode === "canvas") {
+        setTimeout(() => drawChart($("#centerCanvas"), lastChartData), 80);
+      }
+    };
+  }
 
   // Non-blocking concurrent fetch: Chart renders first, then Signal Decision
   api(`/api/chart?q=${encodeURIComponent(sym)}&tf=${activeChartTF}`)
@@ -2190,9 +2287,105 @@ document.addEventListener("click", e => {
   if (c) copyTrade(c.dataset.copy);
 });
 
+// PULL TO REFRESH TOUCH ENGINE (MOBILE PHONE PWA & BROWSER)
+function initPullToRefresh() {
+  const container = $("#workspaceScroll");
+  const indicator = $("#pullRefreshIndicator");
+  const spinner = $("#pullRefreshSpinner");
+  const text = $("#pullRefreshText");
+  if (!container || !indicator || !spinner || !text) return;
+
+  let startY = 0;
+  let currentY = 0;
+  let isPulling = false;
+  let isRefreshing = false;
+  const PULL_THRESHOLD = 58;
+
+  container.addEventListener("touchstart", e => {
+    if (isRefreshing) return;
+    if (container.scrollTop <= 0) {
+      startY = e.touches[0].clientY;
+      isPulling = true;
+    } else {
+      isPulling = false;
+    }
+  }, { passive: true });
+
+  container.addEventListener("touchmove", e => {
+    if (!isPulling || isRefreshing) return;
+    currentY = e.touches[0].clientY;
+    const diff = currentY - startY;
+
+    if (diff > 0 && container.scrollTop <= 0) {
+      const pullDist = Math.min(80, Math.pow(diff, 0.82));
+      indicator.style.height = `${pullDist}px`;
+      indicator.style.opacity = Math.min(1, pullDist / 30);
+      indicator.classList.add("visible");
+
+      const rot = Math.min(360, pullDist * 4.5);
+      spinner.style.transform = `rotate(${rot}deg)`;
+
+      if (pullDist >= PULL_THRESHOLD) {
+        text.textContent = "⚡ Release to refresh...";
+        spinner.style.color = "#ffd700";
+        spinner.style.filter = "drop-shadow(0 0 8px rgba(255,215,0,0.8))";
+      } else {
+        text.textContent = "Pull down to refresh...";
+        spinner.style.color = "#d4af37";
+        spinner.style.filter = "none";
+      }
+    }
+  }, { passive: true });
+
+  const finishRefresh = async () => {
+    isRefreshing = true;
+    indicator.style.height = "42px";
+    spinner.classList.add("spinning");
+    text.textContent = "⚡ Refreshing live market...";
+
+    try {
+      await Promise.all([
+        loadMasterWatchlist(),
+        loadActiveSymbol(activeChartSymbol)
+      ]);
+      showToast("✅ Refreshed!", "Market live quotes updated");
+    } catch(err) {
+      console.error(err);
+    }
+
+    setTimeout(() => {
+      indicator.style.height = "0px";
+      indicator.style.opacity = "0";
+      indicator.classList.remove("visible");
+      spinner.classList.remove("spinning");
+      spinner.style.transform = "rotate(0deg)";
+      text.textContent = "Pull down to refresh...";
+      isRefreshing = false;
+      isPulling = false;
+    }, 450);
+  };
+
+  container.addEventListener("touchend", e => {
+    if (!isPulling || isRefreshing) return;
+    isPulling = false;
+    const diff = currentY - startY;
+    const pullDist = diff > 0 ? Math.min(80, Math.pow(diff, 0.82)) : 0;
+
+    if (pullDist >= PULL_THRESHOLD) {
+      finishRefresh();
+    } else {
+      indicator.style.height = "0px";
+      indicator.style.opacity = "0";
+      indicator.classList.remove("visible");
+      spinner.style.transform = "rotate(0deg)";
+    }
+  }, { passive: true });
+}
+
 // INITIALIZE
 loadMasterWatchlist();
 loadActiveSymbol("NIFTY");
+initPullToRefresh();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
 </script>
 </body>
