@@ -534,28 +534,6 @@ aside.scanner-box {
 .hud-score-val.buy { color: var(--buy); }
 .hud-score-val.sell { color: var(--sell); }
 
-/* Webhook Bridge Styles */
-.webhook-card {
-  background: var(--card);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 16px;
-}
-.code-box {
-  background: #050811;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 12px 14px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  color: #38bdf8;
-  overflow-x: auto;
-  position: relative;
-  margin: 8px 0 14px;
-  word-break: break-all;
-}
-
 /* Signal Hero Box */
 .signal-box {
   background: var(--card);
@@ -728,10 +706,6 @@ aside.scanner-box {
       <button class="nav-link" data-v="record">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         P&L Journal
-      </button>
-      <button class="nav-link" data-v="tvbridge">
-        <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-        👺 Ravan 2.0 Webhook
       </button>
       <button class="nav-link" data-v="settings">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -1239,14 +1213,14 @@ async function loadActiveSymbol(sym) {
         <canvas id="centerCanvas"></canvas>
       </div>
 
-      <!-- RAVAN 2.0 Confluence Screener Ribbon -->
+      <!-- RTW PROPRIETARY CONFLUENCE RADAR (TRAP-FILTERED) -->
       <div class="ravan-hud-bar" id="centerRavanHUD">
         <div class="hud-title-box">
-          <span class="hud-tag">👺 RAVAN 2.0 MATRIX</span>
-          <span class="hud-sub">Multi-Factor Confluence</span>
+          <span class="hud-tag">⚡ RTW CONFLUENCE RADAR</span>
+          <span class="hud-sub">Trap-Filtered Institutional Engine</span>
         </div>
         <div class="hud-chips-box" id="hudChips">
-          <span style="font-size:11px;color:var(--tx-muted)">Calculating indicators...</span>
+          <span style="font-size:11px;color:var(--tx-muted)">Analyzing institutional factors...</span>
         </div>
         <div class="hud-score-box">
           <span class="hud-score-label">ALIGNMENT</span>
@@ -1298,7 +1272,7 @@ async function loadActiveSymbol(sym) {
         $("#centerChartPrice").textContent = "₹" + fmt(cs[cs.length - 1].c);
       }
       drawChart($("#centerCanvas"), cd);
-      renderRavanHUD(cd.ravan_matrix);
+      renderConfluenceRadar(cd.confluence_radar || cd.ravan_matrix);
     }
 
     if (sd.found && sd.decision) {
@@ -1319,7 +1293,7 @@ async function loadActiveSymbol(sym) {
   }
 }
 
-function renderRavanHUD(rm) {
+function renderConfluenceRadar(rm) {
   if (!rm) return;
   const chips = $("#hudChips");
   if (chips) {
@@ -1399,8 +1373,6 @@ async function switchView(v) {
 
   if (v === "signals" || v === "charts") {
     loadActiveSymbol(activeChartSymbol);
-  } else if (v === "tvbridge") {
-    renderTVBridgeView();
   } else if (v === "news") {
     renderNewsView();
   } else if (v === "record") {
@@ -1408,82 +1380,6 @@ async function switchView(v) {
   } else if (v === "settings") {
     renderSettingsView();
   }
-}
-
-function renderTVBridgeView() {
-  $("#viewTitle").textContent = "TradingView RAVAN 2.0 Screener & Webhook Bridge";
-  const origin = window.location.origin;
-  const webhookUrl = `${origin}/api/webhook/tradingview`;
-  const samplePayload = `{\n  "symbol": "{{ticker}}",\n  "action": "{{strategy.order.action}}",\n  "price": {{close}},\n  "sl": 22460,\n  "t1": 22600,\n  "t2": 22680,\n  "indicator": "RAVAN 2.0 SCREENER",\n  "message": "Ravan 2.0 Screener Buy Signal"\n}`;
-
-  $("#mainViewContainer").innerHTML = `
-    <div class="webhook-card">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <span style="font-size:24px">👺</span>
-        <div>
-          <h2 style="margin:0;font-size:18px">RAVAN 2.0 Screener Webhook Bridge</h2>
-          <span style="font-size:11.5px;color:var(--tx-muted)">TradingView alerts direct Raj Trading World aur Telegram me receive honge</span>
-        </div>
-      </div>
-
-      <div style="margin-top:16px">
-        <label style="font-size:11px;font-weight:700;color:var(--tx-muted);text-transform:uppercase">Webhook URL (TradingView me paste karein)</label>
-        <div class="code-box" id="tvUrlBox">${esc(webhookUrl)}</div>
-        <button class="copy-btn" data-copy="${esc(webhookUrl)}" style="margin-bottom:16px;background:#1e293b;border:1px solid rgba(56,189,248,0.4)">
-          📋 Copy Webhook URL
-        </button>
-      </div>
-
-      <div style="margin-top:12px">
-        <label style="font-size:11px;font-weight:700;color:var(--tx-muted);text-transform:uppercase">TradingView Alert Message JSON</label>
-        <div class="code-box" style="white-space:pre">${esc(samplePayload)}</div>
-        <button class="copy-btn" data-copy="${esc(samplePayload)}" style="background:#1e293b;border:1px solid rgba(56,189,248,0.4)">
-          📋 Copy Alert Message JSON
-        </button>
-      </div>
-
-      <div style="margin-top:20px;border-top:1px solid var(--line);padding-top:16px">
-        <h3 style="margin:0 0 10px;font-size:14px;color:var(--acc)">TradingView me Step-by-Step Setup Kaise Karein:</h3>
-        <ol style="margin:0;padding-left:18px;color:var(--tx-dim);line-height:1.7;font-size:12.5px">
-          <li>TradingView chart par apna <b>RAVAN 2.0 SCREENER</b> indicator lagayein.</li>
-          <li>Top bar me <b>Alert</b> icon (ya <code>Alt + A</code>) par click karein.</li>
-          <li>Condition me <b>RAVAN 2.0 SCREENER</b> select karein.</li>
-          <li><b>Notifications</b> tab me jayein aur <b>Webhook URL</b> checkbox tick karein.</li>
-          <li>Upar di gayi Webhook URL paste karein.</li>
-          <li><b>Settings</b> tab me <b>Message</b> box ke andar upar diya gaya JSON paste karein.</li>
-          <li><b>Create</b> par click karein. Jaise hi TradingView alert trigger hoga, aapke terminal aur Telegram par instant VIP Call notification aa jayega!</li>
-        </ol>
-
-        <button class="copy-btn" id="btnTestWebhook" style="margin-top:18px">
-          ⚡ Send Test Alert to Webhook Now
-        </button>
-        <div id="testMsg" style="margin-top:8px;font-weight:700"></div>
-      </div>
-    </div>
-  `;
-
-  $("#btnTestWebhook").onclick = async () => {
-    try {
-      const res = await api("/api/webhook/tradingview", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          symbol: "NIFTY",
-          action: "BUY",
-          price: 22520,
-          sl: 22460,
-          t1: 22600,
-          t2: 22680,
-          indicator: "RAVAN 2.0 SCREENER",
-          message: "Test webhook alert from RTW Terminal"
-        })
-      });
-      $("#testMsg").innerHTML = `<span style="color:var(--buy)">✅ Test Alert successfully delivered! Webhook live hai.</span>`;
-      showToast("👺 Test Alert Received", "RAVAN 2.0 VIP Alert broadcasted successfully.");
-    } catch(e) {
-      $("#testMsg").innerHTML = `<span style="color:var(--sell)">❌ Error: ${esc(e.message)}</span>`;
-    }
-  };
 }
 
 async function renderNewsView() {

@@ -202,10 +202,43 @@ def chart_payload(df: pd.DataFrame, tf: str = "5m", n: int = 120, levels: list |
     else:
         factors.append({"name": "CPR Range", "status": "CALCULATING", "color": "wait", "score": 0})
 
+    # 7. Proprietary Anti-Trap Guard (Institutional Fake-out Protection)
+    pdh = cpr.get("pdh", 0)
+    pdl = cpr.get("pdl", 0)
+    trap_status = "SAFE (NO TRAP)"
+    trap_color = "buy"
+    trap_score = 0
+    if not d_tail.empty and pdh and pdl:
+        last_c = d_tail.iloc[-1]
+        h_val, l_val, c_val, o_val = float(last_c["high"]), float(last_c["low"]), float(last_c["close"]), float(last_c["open"])
+        upper_wick = h_val - max(c_val, o_val)
+        lower_wick = min(c_val, o_val) - l_val
+        body = max(abs(c_val - o_val), 1e-4)
+        if h_val >= pdh and c_val < pdh and upper_wick > 1.4 * body:
+            trap_status = "BULL TRAP (PDH REJECT)"
+            trap_color = "sell"
+            trap_score = -2
+        elif l_val <= pdl and c_val > pdl and lower_wick > 1.4 * body:
+            trap_status = "BEAR TRAP (PDL BOUNCE)"
+            trap_color = "buy"
+            trap_score = 2
+    factors.append({"name": "Trap Guard", "status": trap_status, "color": trap_color, "score": trap_score})
+
     bull_count = sum(1 for f in factors if f["score"] > 0)
     bear_count = sum(1 for f in factors if f["score"] < 0)
     tot = len(factors)
-    if bull_count >= 4:
+
+    # Anti-Whipsaw Filter: If ADX is weak, suppress aggressive calls to prevent chops
+    if adx_val < 20:
+        bias = "CHOPPY REGIME (CAPITAL PRESERVATION)"
+        conf = 45
+    elif trap_score < 0:
+        bias = "BULL TRAP DETECTED — AVOID BUYING"
+        conf = 35
+    elif trap_score > 0:
+        bias = "BEAR TRAP SQUEEZE — REVERSAL BUY"
+        conf = 80
+    elif bull_count >= 4:
         bias = "STRONG BULLISH"
         conf = int((bull_count / tot) * 100)
     elif bear_count >= 4:
@@ -221,7 +254,7 @@ def chart_payload(df: pd.DataFrame, tf: str = "5m", n: int = 120, levels: list |
         bias = "SIDEWAYS / NEUTRAL"
         conf = 50
 
-    ravan_matrix = {
+    confluence_radar = {
         "factors": factors,
         "bias": bias,
         "confidence": conf,
@@ -239,7 +272,8 @@ def chart_payload(df: pd.DataFrame, tf: str = "5m", n: int = 120, levels: list |
         "supertrend_line": st_line,
         "supertrend_dir": st_dir,
         "cpr": cpr,
-        "ravan_matrix": ravan_matrix,
+        "confluence_radar": confluence_radar,
+        "ravan_matrix": confluence_radar,
         "levels": levels or []
     }
 

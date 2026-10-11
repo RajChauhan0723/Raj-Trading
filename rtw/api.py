@@ -120,15 +120,12 @@ def create_app(orc, now_fn=lambda: datetime.now(IST)) -> FastAPI:
             raise HTTPException(400, "action must be BUY or SELL")
         now = now_fn()
         txt = (
-            f"👺 <b>RAVAN 2.0 VIP ALERT RECEIVED!</b>\n"
+            f"⚡ <b>RTW VIP TRADE ALERT</b>\n"
             f"━━━━━━━━━━━━━━━━━━\n"
-            f"⚡ <b>Symbol:</b> {sym}\n"
-            f"🎯 <b>Action:</b> {action}\n"
+            f"🎯 <b>Symbol:</b> {sym} | <b>Action:</b> {action}\n"
             f"💵 <b>Price:</b> {alert.price or '-'}\n"
-            f"🛑 <b>SL:</b> {alert.sl or '-'}\n"
-            f"🎯 <b>Target 1:</b> {alert.t1 or '-'}\n"
-            f"🎯 <b>Target 2:</b> {alert.t2 or '-'}\n"
-            f"📊 <b>Source:</b> {alert.indicator or 'TradingView RAVAN 2.0'}\n"
+            f"🛑 <b>SL:</b> {alert.sl or '-'} | <b>Target:</b> {alert.t1 or '-'}\n"
+            f"📊 <b>Engine:</b> {alert.indicator or 'RTW Confluence Radar'}\n"
             f"🕒 <b>Time:</b> {now.strftime('%d-%b-%Y %I:%M %p IST')}"
         )
         if alert.message:
