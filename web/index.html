@@ -113,7 +113,7 @@ html, body {
 
 /* Column 1: Left Navigation Sidebar */
 aside.left-nav {
-  width: 230px;
+  width: clamp(195px, 15vw, 225px);
   background: var(--bg-sidebar);
   border-right: 1px solid var(--line);
   display: flex;
@@ -340,7 +340,9 @@ main.center-workspace {
 
 /* Column 3: Right Live Scanner Box */
 aside.scanner-box {
-  width: 360px;
+  width: clamp(320px, 25vw, 370px);
+  min-width: 300px;
+  box-sizing: border-box;
   background: var(--bg-scanner);
   border-left: 1px solid var(--line);
   display: flex;
@@ -412,19 +414,19 @@ aside.scanner-box {
 }
 .scanner-tabs {
   display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
+  gap: 3px;
+  align-items: center;
+  width: 100%;
 }
-.scanner-tabs::-webkit-scrollbar { display: none; }
 .scanner-tab-btn {
-  background: none;
-  border: 1px solid transparent;
+  flex: 1;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 55, 0.16);
   color: var(--tx-muted);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 4px 10px;
+  padding: 5px 2px;
   border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
@@ -432,12 +434,13 @@ aside.scanner-box {
 }
 .scanner-tab-btn:hover {
   color: #ffd700;
+  border-color: rgba(212, 175, 55, 0.4);
 }
 .scanner-tab-btn.active {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.08));
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.25), rgba(212, 175, 55, 0.08));
   color: #ffd700;
-  border-color: rgba(212, 175, 55, 0.45);
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.65);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
 }
 
 .scanner-list {
@@ -472,24 +475,32 @@ aside.scanner-box {
 .row-sym-box {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
 }
 .row-sym {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--tx);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .row-sub {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--tx-muted);
 }
 .row-price-box {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  flex-shrink: 0;
+  margin-left: 8px;
 }
 .row-price {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--tx);
 }
@@ -1346,10 +1357,10 @@ aside.scanner-box {
       </div>
 
       <div class="scanner-tabs">
-        <button class="scanner-tab-btn active" data-cat="all">All (75)</button>
-        <button class="scanner-tab-btn" data-cat="index">Indices</button>
-        <button class="scanner-tab-btn" data-cat="commodity">Commodities</button>
-        <button class="scanner-tab-btn" data-cat="stocks">Top F&O</button>
+        <button class="scanner-tab-btn active" data-cat="all">All</button>
+        <button class="scanner-tab-btn" data-cat="index">Index</button>
+        <button class="scanner-tab-btn" data-cat="commodity">MCX</button>
+        <button class="scanner-tab-btn" data-cat="stocks">Stocks</button>
         <button class="scanner-tab-btn" data-cat="crypto">Crypto</button>
       </div>
     </div>
@@ -2801,11 +2812,16 @@ document.querySelectorAll(".nav-link").forEach(l => {
 });
 
 // Category Filter in Scanner
-document.querySelectorAll(".scanner-tab-btn").forEach(btn => {
+document.querySelectorAll(".scanner-tabs .scanner-tab-btn").forEach(btn => {
   btn.onclick = () => {
-    document.querySelectorAll(".scanner-tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".scanner-tabs .scanner-tab-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
-    scannerCategory = btn.dataset.cat;
+    scannerCategory = btn.dataset.cat || "all";
+    if (scannerFilterQuery) {
+      scannerFilterQuery = "";
+      const searchBox = $("#scannerSearchInput");
+      if (searchBox) searchBox.value = "";
+    }
     renderScannerList();
   };
 });
