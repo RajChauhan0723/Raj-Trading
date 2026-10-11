@@ -60,7 +60,7 @@ def get_settings() -> Settings:
         telegram_token=g("TELEGRAM_BOT_TOKEN", ""), telegram_chat_id=g("TELEGRAM_CHAT_ID", ""),
         angel_api_key=g("ANGEL_API_KEY", ""), angel_client_code=g("ANGEL_CLIENT_CODE", ""), angel_pin=g("ANGEL_PIN", ""),
         angel_totp_secret=g("ANGEL_TOTP_SECRET", ""), fred_key=g("FRED_API_KEY", ""),
-        stocks_top_n=int(_f("RTW_STOCKS_TOP_N", 50)), max_trades=max(1, min(5, int(_f("RTW_MAX_TRADES", 1)))), host=g("RTW_HOST", "0.0.0.0"), port=int(_f("RTW_PORT", 8000)))
+        stocks_top_n=int(_f("RTW_STOCKS_TOP_N", 50)), max_trades=max(1, min(5, int(_f("RTW_MAX_TRADES", 1)))), host=g("RTW_HOST", "0.0.0.0"), port=int(g("PORT") or _f("RTW_PORT", 8000)))
 
 
 # ------------------------------------------------------------------ universe
