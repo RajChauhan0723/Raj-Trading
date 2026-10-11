@@ -456,8 +456,10 @@ class Orchestrator:
         """Chart of any symbol (or of one option contract when strike/cp/expiry are given). Levels come from the open trade, else
         from the current BUY/SELL plan (marked INFO). Candles are closed bars only."""
         from .charts import chart_payload, levels_from_plan, tv_url, TFS
-        if tf not in TFS:
-            return {"found": False, "message": "tf 5m / 15m / 1h me se ek ho"}
+        if tf == "1m":
+            tf = "5m"
+        elif tf not in TFS:
+            return {"found": False, "message": "tf 1m / 5m / 15m / 1h me se ek ho"}
         sp = self.resolve(q, now)
         if sp is None:
             return {"found": False, "message": "Symbol samajh nahi aaya"}

@@ -845,6 +845,42 @@ function getTVSymbol(sym) {
   return "NSE:" + s.replace("&", "_");
 }
 
+let btcWs = null;
+function initBtcWebSocket() {
+  try {
+    if (btcWs) {
+      try { btcWs.close(); } catch(e){}
+    }
+    btcWs = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@ticker");
+    btcWs.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      const livePrice = parseFloat(data.c);
+      if (activeChartSymbol && (activeChartSymbol.toUpperCase().includes("BTC") || activeChartSymbol.toUpperCase().includes("CRYPTO"))) {
+        const priceEl = $("#centerChartPrice");
+        if (priceEl) {
+          const prev = parseFloat(priceEl.dataset.p || "0");
+          priceEl.textContent = "$" + fmt(livePrice);
+          priceEl.dataset.p = livePrice;
+          if (prev) {
+            priceEl.style.color = livePrice >= prev ? "#10b981" : "#f43f5e";
+            setTimeout(() => { if (priceEl) priceEl.style.color = "var(--tx)"; }, 350);
+          }
+        }
+      }
+      const tickBtc = $("#tickBTCUSDT");
+      if (tickBtc) tickBtc.textContent = "$" + fmt(livePrice);
+      const row = document.querySelector(`.scanner-row[data-symbol="BTCUSDT"] .row-price`);
+      if (row) {
+        row.textContent = "$" + fmt(livePrice);
+      }
+    };
+    btcWs.onerror = () => {};
+    btcWs.onclose = () => { setTimeout(initBtcWebSocket, 3000); };
+  } catch(e) {
+    console.error("WS err", e);
+  }
+}
+
 let chartInterval = null;
 function startChartPolling() {
   if (chartInterval) clearInterval(chartInterval);
@@ -1227,7 +1263,13 @@ async function loadActiveSymbol(sym) {
       <div class="chart-top-bar">
         <div class="chart-sym-title">
           <h2 id="centerChartName">${sym}</h2>
-          <span class="chart-ltp-disp" id="centerChartPrice">-</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="chart-ltp-disp" id="centerChartPrice">-</span>
+            <span id="livePulseTag" style="font-size:10px;background:rgba(16,185,129,0.15);color:var(--buy);border:1px solid rgba(16,185,129,0.4);padding:2px 8px;border-radius:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px">
+              <span style="display:inline-block;width:6px;height:6px;background:var(--buy);border-radius:50%;box-shadow:0 0 6px var(--buy)"></span>
+              LIVE TICKS
+            </span>
+          </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <!-- Live Chart Mode Switcher -->
@@ -1249,7 +1291,7 @@ async function loadActiveSymbol(sym) {
           </div>
 
           <div style="display:flex;gap:4px">
-            ${["5m", "15m", "1h"].map(tf => `
+            ${["1m", "5m", "15m", "1h"].map(tf => `
               <button class="scanner-tab-btn ${tf === activeChartTF ? 'active' : ''}" data-ctf="${tf}">
                 ${tf}
               </button>
@@ -1263,9 +1305,9 @@ async function loadActiveSymbol(sym) {
 
       <div class="chart-canvas-box" id="chartBoxArea" style="position:relative;min-height:360px">
         <canvas id="centerCanvas" style="${chartMode === 'tradingview' ? 'display:none' : 'display:block;width:100%;height:100%'}"></canvas>
-        <div id="tvEmbedContainer" style="${chartMode === 'tradingview' ? 'display:block' : 'display:none'};width:100%;height:100%;min-height:360px">
+        <div id="tvEmbedContainer" style="${chartMode === 'tradingview' ? 'display:block' : 'display:none'};width:100%;height:100%;min-height:440px">
           ${chartMode === 'tradingview' ? `
-            <iframe src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(getTVSymbol(sym))}&interval=${activeChartTF === '1h' ? '60' : activeChartTF === '15m' ? '15' : '5'}&theme=dark&style=1&locale=in&toolbar_bg=0f172a&enable_publishing=false&hide_side_toolbar=0&allow_symbol_change=1" style="width:100%;height:100%;min-height:360px;border:none;border-radius:8px"></iframe>
+            <iframe src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(getTVSymbol(sym))}&interval=${activeChartTF === '1h' ? '60' : activeChartTF === '15m' ? '15' : activeChartTF === '1m' ? '1' : '5'}&theme=dark&style=1&locale=in&toolbar_bg=0f172a&enable_publishing=false&hide_side_toolbar=0&allow_symbol_change=1" style="width:100%;height:100%;min-height:440px;border:none;border-radius:8px"></iframe>
           ` : ''}
         </div>
       </div>
@@ -1315,7 +1357,7 @@ async function loadActiveSymbol(sym) {
       $("#tvEmbedContainer").style.display = "block";
       $("#indToggles").style.display = "none";
       const tvSym = getTVSymbol(sym);
-      const tfInt = activeChartTF === '1h' ? '60' : activeChartTF === '15m' ? '15' : '5';
+      const tfInt = activeChartTF === '1h' ? '60' : activeChartTF === '15m' ? '15' : activeChartTF === '1m' ? '1' : '5';
       $("#tvEmbedContainer").innerHTML = `
         <iframe src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(tvSym)}&interval=${tfInt}&theme=dark&style=1&locale=in&toolbar_bg=0f172a&enable_publishing=false&hide_side_toolbar=0&allow_symbol_change=1" style="width:100%;height:100%;min-height:360px;border:none;border-radius:8px"></iframe>
       `;
@@ -1641,6 +1683,7 @@ $("#btnToggleScanner").onclick = () => {
 $("#btnHardRefresh").onclick = () => {
   loadMasterWatchlist();
   startChartPolling();
+  initBtcWebSocket();
   loadActiveSymbol(activeChartSymbol);
   showToast("Refreshed", "Live market feed updated");
 };
