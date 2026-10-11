@@ -5,41 +5,60 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#060913">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/icon-192.png">
-<title>Raj Trading World — Pro Institutional Terminal</title>
+<link rel="icon" type="image/jpeg" href="/logo.jpg">
+<title>Raj Trading World — Cyber Institutional Terminal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #060913;
-  --bg-sidebar: #0a0e1c;
-  --bg-scanner: #0d1224;
-  --card: #12182a;
-  --card-border: rgba(255, 255, 255, 0.08);
-  --card-hover: #18223c;
-  --card-inner: #080c18;
+  --bg: #03050e;
+  --bg-sidebar: #050817;
+  --bg-scanner: #060a1d;
+  --card: rgba(10, 16, 38, 0.82);
+  --card-border: rgba(0, 242, 254, 0.18);
+  --card-hover: rgba(16, 26, 60, 0.9);
+  --card-inner: rgba(4, 7, 18, 0.85);
   --tx: #f8fafc;
   --tx-dim: #94a3b8;
-  --tx-muted: #64748b;
-  --buy: #10b981;
-  --buy-glow: rgba(16, 185, 129, 0.25);
-  --buy-bg: rgba(16, 185, 129, 0.1);
-  --sell: #f43f5e;
-  --sell-glow: rgba(244, 63, 94, 0.25);
-  --sell-bg: rgba(244, 63, 94, 0.1);
-  --wait: #f59e0b;
-  --wait-glow: rgba(245, 158, 11, 0.2);
-  --wait-bg: rgba(245, 158, 11, 0.1);
-  --acc: #38bdf8;
-  --acc-glow: rgba(56, 189, 248, 0.25);
-  --line: rgba(255, 255, 255, 0.08);
+  --tx-muted: #556987;
+
+  /* Cyberpunk Neon Color Tokens */
+  --neon-cyan: #00f2fe;
+  --neon-cyan-glow: 0 0 18px rgba(0, 242, 254, 0.55);
+  --neon-emerald: #00ff88;
+  --neon-emerald-glow: 0 0 22px rgba(0, 255, 136, 0.6);
+  --neon-ruby: #ff0055;
+  --neon-ruby-glow: 0 0 22px rgba(255, 0, 85, 0.6);
+  --neon-gold: #ffb703;
+  --neon-purple: #a855f7;
+
+  --buy: #00ff88;
+  --buy-glow: rgba(0, 255, 136, 0.45);
+  --buy-bg: rgba(0, 255, 136, 0.08);
+
+  --sell: #ff0055;
+  --sell-glow: rgba(255, 0, 85, 0.45);
+  --sell-bg: rgba(255, 0, 85, 0.08);
+
+  --wait: #ffb703;
+  --wait-glow: rgba(255, 183, 3, 0.35);
+  --wait-bg: rgba(255, 183, 3, 0.08);
+
+  --acc: #00f2fe;
+  --acc-glow: rgba(0, 242, 254, 0.45);
+  --line: rgba(0, 242, 254, 0.12);
+  --line-strong: rgba(0, 242, 254, 0.28);
+  --glass: rgba(10, 16, 38, 0.82);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background: radial-gradient(circle at 10% 15%, rgba(0, 242, 254, 0.07) 0%, transparent 45%),
+              radial-gradient(circle at 90% 85%, rgba(168, 85, 247, 0.07) 0%, transparent 45%),
+              radial-gradient(circle at 50% 50%, rgba(0, 255, 136, 0.03) 0%, transparent 60%),
+              #03050e;
   color: var(--tx);
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   font-size: 13.5px;
@@ -75,29 +94,46 @@ aside.left-nav {
   align-items: center;
   gap: 10px;
 }
-.brand-badge {
-  width: 34px;
-  height: 34px;
-  background: linear-gradient(135deg, #38bdf8, #6366f1);
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 16px;
-  color: #fff;
-  box-shadow: 0 4px 14px var(--acc-glow);
+.brand-logo-frame {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  padding: 2px;
+  background: linear-gradient(135deg, #00f2fe, #9d4edd, #00ff88);
+  box-shadow: 0 0 18px rgba(0, 242, 254, 0.5), inset 0 0 10px rgba(0, 255, 136, 0.3);
+  flex-shrink: 0;
+  animation: pulseLogoGlow 3.5s infinite alternate ease-in-out;
+}
+.brand-bull-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+}
+@keyframes pulseLogoGlow {
+  0% { box-shadow: 0 0 14px rgba(0, 242, 254, 0.45), 0 0 25px rgba(168, 85, 247, 0.25); }
+  100% { box-shadow: 0 0 24px rgba(0, 242, 254, 0.8), 0 0 38px rgba(0, 255, 136, 0.45); }
 }
 .brand-title h1 {
-  font-size: 14.5px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
   font-weight: 800;
   margin: 0;
-  letter-spacing: -0.2px;
+  letter-spacing: 0.8px;
+  background: linear-gradient(90deg, #ffffff 0%, #00f2fe 55%, #00ff88 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.4));
 }
 .brand-title span {
-  font-size: 10.5px;
-  color: var(--tx-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #00f2fe;
+  text-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
   display: block;
+  margin-top: 2px;
 }
 .nav-items {
   padding: 14px 8px;
@@ -386,17 +422,33 @@ aside.scanner-box {
   border-radius: 4px;
   text-transform: uppercase;
 }
-.badge-buy { background: var(--buy-bg); color: var(--buy); border: 1px solid rgba(16, 185, 129, 0.3); }
-.badge-sell { background: var(--sell-bg); color: var(--sell); border: 1px solid rgba(244, 63, 94, 0.3); }
-.badge-wait { background: var(--wait-bg); color: var(--wait); border: 1px solid rgba(245, 158, 11, 0.3); }
+.badge-buy {
+  background: rgba(0, 255, 136, 0.14);
+  color: #00ff88;
+  border: 1px solid #00ff88;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+}
+.badge-sell {
+  background: rgba(255, 0, 85, 0.14);
+  color: #ff0055;
+  border: 1px solid #ff0055;
+  box-shadow: 0 0 10px rgba(255, 0, 85, 0.4);
+}
+.badge-wait {
+  background: rgba(255, 183, 3, 0.1);
+  color: #ffb703;
+  border: 1px solid rgba(255, 183, 3, 0.4);
+}
 
 /* Chart Viewport in Center */
 .chart-card {
-  background: var(--card);
-  border: 1px solid var(--card-border);
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 16px;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 18px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 0 25px rgba(0, 242, 254, 0.03);
 }
 .chart-top-bar {
   display: flex;
@@ -413,9 +465,12 @@ aside.scanner-box {
 }
 .chart-sym-title h2 {
   margin: 0;
-  font-size: 20px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 21px;
   font-weight: 800;
-  letter-spacing: -0.3px;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(0, 242, 254, 0.4);
 }
 .chart-ltp-disp {
   font-family: 'JetBrains Mono', monospace;
@@ -466,27 +521,30 @@ aside.scanner-box {
 }
 
 .ravan-hud-bar {
-  background: #090e1f;
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: 10px;
-  padding: 10px 14px;
-  margin-top: 12px;
+  background: linear-gradient(90deg, rgba(8, 14, 34, 0.95), rgba(4, 7, 18, 0.98));
+  border: 1px solid rgba(0, 242, 254, 0.35);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-top: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
+  box-shadow: 0 0 25px rgba(0, 242, 254, 0.15), inset 0 0 15px rgba(0, 242, 254, 0.05);
 }
 .hud-title-box {
   display: flex;
   flex-direction: column;
 }
 .hud-tag {
-  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11.5px;
   font-weight: 800;
-  color: #38bdf8;
-  letter-spacing: 0.5px;
+  color: #00f2fe;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(0, 242, 254, 0.7);
 }
 .hud-sub {
   font-size: 9.5px;
@@ -536,29 +594,70 @@ aside.scanner-box {
 
 /* Signal Hero Box */
 .signal-box {
-  background: var(--card);
-  border: 1px solid var(--card-border);
-  border-radius: 14px;
-  padding: 18px;
-  margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(10, 16, 38, 0.95), rgba(5, 8, 20, 0.98));
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 18px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
 }
-.signal-box.is-buy { border-color: rgba(16, 185, 129, 0.35); box-shadow: 0 4px 25px var(--buy-glow); }
-.signal-box.is-sell { border-color: rgba(244, 63, 94, 0.35); box-shadow: 0 4px 25px var(--sell-glow); }
-.signal-box.is-wait { border-color: rgba(245, 158, 11, 0.35); box-shadow: 0 4px 25px var(--wait-glow); }
+.signal-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+}
+.signal-box.is-buy {
+  border-color: #00ff88;
+  box-shadow: 0 0 35px rgba(0, 255, 136, 0.35), inset 0 0 20px rgba(0, 255, 136, 0.05);
+}
+.signal-box.is-buy::before {
+  background: linear-gradient(90deg, transparent, #00ff88, transparent);
+}
+.signal-box.is-sell {
+  border-color: #ff0055;
+  box-shadow: 0 0 35px rgba(255, 0, 85, 0.35), inset 0 0 20px rgba(255, 0, 85, 0.05);
+}
+.signal-box.is-sell::before {
+  background: linear-gradient(90deg, transparent, #ff0055, transparent);
+}
+.signal-box.is-wait {
+  border-color: rgba(0, 242, 254, 0.3);
+  box-shadow: 0 0 25px rgba(0, 242, 254, 0.15);
+}
 
 .sig-action-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12.5px;
   font-weight: 800;
-  padding: 5px 14px;
+  padding: 6px 16px;
   border-radius: 8px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
 }
-.pill-buy { background: var(--buy); color: #022c22; box-shadow: 0 4px 14px var(--buy-glow); }
-.pill-sell { background: var(--sell); color: #fff; box-shadow: 0 4px 14px var(--sell-glow); }
-.pill-wait { background: var(--wait); color: #451a03; box-shadow: 0 4px 14px var(--wait-glow); }
+.pill-buy {
+  background: linear-gradient(135deg, #00ff88, #00d26a);
+  color: #022014;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.65), inset 0 0 10px rgba(255, 255, 255, 0.3);
+}
+.pill-sell {
+  background: linear-gradient(135deg, #ff0055, #d9044b);
+  color: #ffffff;
+  box-shadow: 0 0 20px rgba(255, 0, 85, 0.65), inset 0 0 10px rgba(255, 255, 255, 0.3);
+}
+.pill-wait {
+  background: linear-gradient(135deg, rgba(255, 183, 3, 0.2), rgba(255, 183, 3, 0.08));
+  color: #ffb703;
+  border: 1px solid #ffb703;
+  box-shadow: 0 0 16px rgba(255, 183, 3, 0.4);
+}
 
 .grid-4 {
   display: grid;
@@ -567,15 +666,37 @@ aside.scanner-box {
   margin: 14px 0;
 }
 .metric-tile {
-  background: var(--card-inner);
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: rgba(4, 7, 18, 0.9);
+  border: 1px solid rgba(0, 242, 254, 0.18);
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s;
 }
-.metric-tile.entry { border-color: rgba(56, 189, 248, 0.3); }
-.metric-tile.sl { border-color: rgba(244, 63, 94, 0.3); background: var(--sell-bg); }
-.metric-tile.t1 { border-color: rgba(16, 185, 129, 0.3); background: var(--buy-bg); }
-.metric-tile.t2 { border-color: rgba(16, 185, 129, 0.3); background: var(--buy-bg); }
+.metric-tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 16px var(--neon-cyan-glow);
+}
+.metric-tile.entry {
+  border-color: rgba(0, 242, 254, 0.45);
+  box-shadow: 0 0 14px rgba(0, 242, 254, 0.2);
+}
+.metric-tile.sl {
+  border-color: rgba(255, 0, 85, 0.45);
+  background: rgba(255, 0, 85, 0.06);
+  box-shadow: 0 0 14px rgba(255, 0, 85, 0.2);
+}
+.metric-tile.t1 {
+  border-color: rgba(0, 255, 136, 0.45);
+  background: rgba(0, 255, 136, 0.06);
+  box-shadow: 0 0 14px rgba(0, 255, 136, 0.2);
+}
+.metric-tile.t2 {
+  border-color: rgba(0, 255, 136, 0.6);
+  background: rgba(0, 255, 136, 0.08);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+}
 .tile-lbl {
   font-size: 11px;
   font-weight: 700;
@@ -597,20 +718,28 @@ aside.scanner-box {
 
 .copy-btn {
   width: 100%;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  border: 0;
-  border-radius: 10px;
-  color: #fff;
-  padding: 12px;
-  font-weight: 700;
-  font-size: 14px;
+  background: linear-gradient(135deg, #00f2fe, #0077ff);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  color: #03081a;
+  padding: 13px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.8px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
-  margin-top: 10px;
+  box-shadow: 0 0 25px rgba(0, 242, 254, 0.45), 0 6px 20px rgba(0, 0, 0, 0.4);
+  margin-top: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.copy-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 35px rgba(0, 242, 254, 0.75), 0 8px 25px rgba(0, 0, 0, 0.5);
+  filter: brightness(1.1);
 }
 
 /* Toast */
@@ -683,10 +812,12 @@ aside.scanner-box {
   <!-- COLUMN 1: LEFT NAVIGATION SIDEBAR -->
   <aside class="left-nav" id="leftNav">
     <div class="nav-header">
-      <div class="brand-badge">R</div>
+      <div class="brand-logo-frame">
+        <img src="/logo.jpg" alt="Raj Trading World 3D Bull" class="brand-bull-img">
+      </div>
       <div class="brand-title">
-        <h1>RTW Terminal</h1>
-        <span>AI Trade Advisor</span>
+        <h1>RAJ TRADING WORLD</h1>
+        <span>⚡ PRO INSTITUTIONAL DESK</span>
       </div>
     </div>
 
