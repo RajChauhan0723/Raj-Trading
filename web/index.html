@@ -845,6 +845,11 @@ function getTVSymbol(sym) {
   return "NSE:" + s.replace("&", "_");
 }
 
+function isTVRestricted(sym) {
+  const s = (sym || "").toUpperCase().trim();
+  return ["NIFTY", "NIFTY 50", "BANKNIFTY", "BANK NIFTY", "MIDCPNIFTY", "SENSEX", "BSE SENSEX"].includes(s);
+}
+
 let btcWs = null;
 function initBtcWebSocket() {
   try {
@@ -1256,6 +1261,11 @@ let currentLoadId = 0;
 async function loadActiveSymbol(sym) {
   const thisLoadId = ++currentLoadId;
   activeChartSymbol = sym;
+
+  // NSE Index (NIFTY/BANKNIFTY) is restricted by TradingView on free embeds; auto-default to RTW Radar Chart
+  if (isTVRestricted(sym)) {
+    chartMode = "canvas";
+  }
   // Update Center Top Title
   $("#viewTitle").textContent = `${sym} — Interactive Pro Chart & Signals`;
 
@@ -1310,7 +1320,7 @@ async function loadActiveSymbol(sym) {
       <div class="chart-canvas-box" id="chartBoxArea" style="position:relative;min-height:360px">
         <canvas id="centerCanvas" style="${chartMode === 'tradingview' ? 'display:none' : 'display:block;width:100%;height:100%'}"></canvas>
         <div id="tvEmbedContainer" style="${chartMode === 'tradingview' ? 'display:block' : 'display:none'};width:100%;height:100%;min-height:440px">
-          ${chartMode === 'tradingview' ? `
+          ${chartMode === 'tradingview' && !isTVRestricted(sym) ? `
             <iframe src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(getTVSymbol(sym))}&interval=${activeChartTF === '1h' ? '60' : activeChartTF === '15m' ? '15' : activeChartTF === '1m' ? '1' : '5'}&theme=dark&style=1&locale=in&toolbar_bg=0f172a&enable_publishing=false&hide_side_toolbar=0&allow_symbol_change=1" style="width:100%;height:100%;min-height:440px;border:none;border-radius:8px"></iframe>
           ` : ''}
         </div>
@@ -1360,11 +1370,34 @@ async function loadActiveSymbol(sym) {
       $("#centerCanvas").style.display = "none";
       $("#tvEmbedContainer").style.display = "block";
       $("#indToggles").style.display = "none";
-      const tvSym = getTVSymbol(sym);
-      const tfInt = activeChartTF === '1h' ? '60' : activeChartTF === '15m' ? '15' : activeChartTF === '1m' ? '1' : '5';
-      $("#tvEmbedContainer").innerHTML = `
-        <iframe src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(tvSym)}&interval=${tfInt}&theme=dark&style=1&locale=in&toolbar_bg=0f172a&enable_publishing=false&hide_side_toolbar=0&allow_symbol_change=1" style="width:100%;height:100%;min-height:360px;border:none;border-radius:8px"></iframe>
-      `;
+      if (isTVRestricted(sym)) {
+        $("#tvEmbedContainer").innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:420px;background:rgba(255,255,255,0.02);border-radius:8px;padding:30px;text-align:center">
+            <div style="font-size:42px;margin-bottom:12px">🛡️</div>
+            <h3 style="margin:0 0 10px;font-size:18px;color:var(--tx)">TradingView Policy Notice: NSE Index Restricted</h3>
+            <p style="color:var(--tx-dim);max-width:540px;font-size:13.5px;line-height:1.6;margin:0 0 20px">
+              TradingView exchange licensing policy ke mutabiq official <b>NSE Index (NIFTY 50, Bank Nifty, Sensex)</b> ko kisi bhi third-party website widget me free embed nahi karne deta (ye TradingView ki official exchange policy hai).<br><br>
+              NIFTY ka complete interactive candlestick chart hamare <b>⚡ RTW Radar Chart</b> me bina kisi restriction ke 100% available hai, ya aap direct TradingView.com par dekh sakte hain.
+            </p>
+            <div style="display:flex;gap:12px">
+              <button class="scanner-tab-btn active" id="btnSwitchBackCanvas" style="padding:10px 20px;font-weight:700;background:var(--acc);color:#0f172a">
+                ⚡ Switch to RTW Radar Chart
+              </button>
+              <a href="https://www.tradingview.com/chart/?symbol=NSE%3ANIFTY" target="_blank" rel="noopener" class="scanner-tab-btn" style="padding:10px 20px;text-decoration:none;display:inline-flex;align-items:center;gap:6px">
+                TradingView.com par kholein ↗
+              </a>
+            </div>
+          </div>
+        `;
+        const sb = $("#btnSwitchBackCanvas");
+        if (sb) sb.onclick = () => btnC.click();
+      } else {
+        const tvSym = getTVSymbol(sym);
+        const tfInt = activeChartTF === '1h' ? '60' : activeChartTF === '15m' ? '15' : activeChartTF === '1m' ? '1' : '5';
+        $("#tvEmbedContainer").innerHTML = `
+          <iframe src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(tvSym)}&interval=${tfInt}&theme=dark&style=1&locale=in&toolbar_bg=0f172a&enable_publishing=false&hide_side_toolbar=0&allow_symbol_change=1" style="width:100%;height:100%;min-height:440px;border:none;border-radius:8px"></iframe>
+        `;
+      }
     };
   }
 
