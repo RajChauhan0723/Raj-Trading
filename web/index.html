@@ -1334,7 +1334,10 @@ function renderSymbolDecision(d, name, sym) {
   const pillClass = isBuy ? "pill-buy" : isSell ? "pill-sell" : "pill-wait";
 
   const p = d.plan;
-  const copyTxt = `🎯 RTW TRADE CALL: ${sym} ${d.action}\nEntry: ${p ? fmt(p.entry_lo) + ' - ' + fmt(p.entry_hi) : '-'}\nSL: ${p ? fmt(p.sl) : '-'}\nTarget 1: ${p ? fmt(p.t1) : '-'}\nTarget 2: ${p ? fmt(p.t2) : '-'}`;
+  const opt = (d.extra && d.extra.option) ? d.extra.option : null;
+  const copyTxt = opt ?
+    `🎯 RTW OPTION CALL: ${d.instrument || sym}\nAction: BUY ${opt.strike} ${opt.cp} (${opt.expiry || 'Near Expiry'})\nPremium Entry: ₹${fmt(opt.premium)}\nPremium SL: ₹${fmt(opt.sl_premium)}\nTarget 1: ₹${fmt(opt.t1_premium)}\nTarget 2: ₹${fmt(opt.t2_premium)}\nUnderlying Spot: ₹${fmt(d.price)}` :
+    `🎯 RTW TRADE CALL: ${sym} ${d.action}\nEntry: ${p ? fmt(p.entry_lo) + ' - ' + fmt(p.entry_hi) : '-'}\nSL: ${p ? fmt(p.sl) : '-'}\nTarget 1: ${p ? fmt(p.t1) : '-'}\nTarget 2: ${p ? fmt(p.t2) : '-'}`;
 
   let h = `
     <div class="signal-box ${boxClass}">
@@ -1348,17 +1351,41 @@ function renderSymbolDecision(d, name, sym) {
         </div>
       </div>
 
+      ${opt && d.action !== "WAIT" ? `
+        <!-- DEDICATED OPTION CONTRACT CALL BOX -->
+        <div style="background:rgba(56,189,248,0.07);border:1px solid rgba(56,189,248,0.3);border-radius:10px;padding:12px;margin:10px 0 14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:16px">🎯</span>
+              <b style="color:var(--acc);font-size:15px">OPTION STRIKE: BUY ${esc(d.instrument || sym + ' ' + opt.strike + ' ' + opt.cp)}</b>
+            </div>
+            <span style="font-size:11px;background:rgba(56,189,248,0.2);color:var(--acc);padding:2px 8px;border-radius:4px;font-weight:700">Expiry: ${esc(opt.expiry || 'Current')}</span>
+          </div>
+          <div class="grid-4" style="margin-top:8px">
+            <div class="metric-tile entry"><span class="tile-lbl">Option Entry Premium</span><span class="tile-val">₹${fmt(opt.premium)}</span></div>
+            <div class="metric-tile sl"><span class="tile-lbl">Option SL Premium</span><span class="tile-val">₹${fmt(opt.sl_premium)}</span></div>
+            <div class="metric-tile t1"><span class="tile-lbl">Target 1 Premium</span><span class="tile-val">₹${fmt(opt.t1_premium)}</span></div>
+            <div class="metric-tile t2"><span class="tile-lbl">Target 2 Premium</span><span class="tile-val">₹${fmt(opt.t2_premium)}</span></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11.5px;color:var(--tx-muted)">
+            <span>Delta: <b>${(opt.delta || 0).toFixed(2)}</b> | POP: <b>${((opt.pop || 0.5) * 100).toFixed(0)}%</b></span>
+            <span>Lot Size: <b>${esc(d.extra.lot_size || '-')}</b> | Max Risk: <b>₹${fmt(d.extra.risk_amount || 0)}</b></span>
+          </div>
+        </div>
+      ` : ''}
+
       ${p && d.action !== "WAIT" ? `
+        <div style="margin-bottom:4px;font-size:12px;color:var(--tx-muted);font-weight:700">UNDERLYING SPOT LEVELS:</div>
         <div class="grid-4">
-          <div class="metric-tile entry"><span class="tile-lbl">Entry Zone</span><span class="tile-val">${fmt(p.entry_lo)} – ${fmt(p.entry_hi)}</span></div>
-          <div class="metric-tile sl"><span class="tile-lbl">Stoploss (SL)</span><span class="tile-val">${fmt(p.sl)}</span></div>
-          <div class="metric-tile t1"><span class="tile-lbl">Target 1 (T1)</span><span class="tile-val">${fmt(p.t1)}</span></div>
-          <div class="metric-tile t2"><span class="tile-lbl">Target 2 (T2)</span><span class="tile-val">${fmt(p.t2)}</span></div>
+          <div class="metric-tile entry"><span class="tile-lbl">Spot Entry Zone</span><span class="tile-val">${fmt(p.entry_lo)} – ${fmt(p.entry_hi)}</span></div>
+          <div class="metric-tile sl"><span class="tile-lbl">Spot Stoploss (SL)</span><span class="tile-val">${fmt(p.sl)}</span></div>
+          <div class="metric-tile t1"><span class="tile-lbl">Spot Target 1 (T1)</span><span class="tile-val">${fmt(p.t1)}</span></div>
+          <div class="metric-tile t2"><span class="tile-lbl">Spot Target 2 (T2)</span><span class="tile-val">${fmt(p.t2)}</span></div>
         </div>
 
         <button class="copy-btn" data-copy="${esc(copyTxt)}">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          📋 Copy Signal for Broker / WhatsApp
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/></svg>
+          📋 Copy Option Signal for Broker / WhatsApp
         </button>
       ` : `
         <div style="background:rgba(255,255,255,0.02);border:1px dashed var(--line);border-radius:10px;padding:14px;margin:10px 0">
@@ -1373,6 +1400,11 @@ function renderSymbolDecision(d, name, sym) {
             <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">⏰ NSE/BSE: Mon-Fri 9:15 AM - 3:30 PM IST</span>
             <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">⚡ 24/7 Live: Bitcoin (BTC)</span>
             <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">🎯 Signal aate hi isi box me Entry, SL & Targets live dikhenge</span>
+          </div>
+
+          <!-- OPTION CHAIN STRATEGY INTEL -->
+          <div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--acc)">
+            <span>📊 <b>F&O Option Strategy:</b> Nifty/Stock setup confirm hote hi AI At-The-Money (ATM) <b>CE (Call)</b> ya <b>PE (Put)</b> ka exact <b>Option Premium Entry, SL & Target</b> yahan display karega.</span>
           </div>
         </div>
       `}
