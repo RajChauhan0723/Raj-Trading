@@ -13,7 +13,7 @@ def us_dst_active(d: date) -> bool:
 
 def session_times(segment: str, d: date):
     """segment: NSE | MCX | CDS_INR | CDS_CROSS | CRYPTO. Returns (open_time, close_time) or None (24x7)."""
-    if segment == "NSE":
+    if segment in ("NSE", "BSE"):
         return time(9, 15), time(15, 30)
     if segment == "MCX":
         return time(9, 0), (time(23, 30) if us_dst_active(d) else time(23, 55))

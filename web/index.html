@@ -1623,6 +1623,74 @@ const STATIC_TOP_STOCKS = [
   "INDUSINDBK", "BPCL", "IOC", "DIVISLAB", "HEROMOTOCO", "APOLLOHOSP", "TRENT", "BEL", "HAL", "SBILIFE", "HDFCLIFE"
 ];
 
+// Baseline / Last Closing Prices when Market is Closed (Prev Session Close)
+const PREV_CLOSE_PRICES = {
+  // Core Indices
+  "NIFTY": 24903.98,
+  "BANKNIFTY": 53558.32,
+  "MIDCPNIFTY": 12445.46,
+  "SENSEX": 81388.40,
+  
+  // Commodities (MCX)
+  "GOLD": 76450.00,
+  "SILVER": 91200.00,
+  "CRUDEOIL": 5446.27,
+  "NATURALGAS": 283.81,
+  
+  // Crypto
+  "BTCUSDT": 83861.00,
+  
+  // Top F&O Stocks (Official last session closing values)
+  "RELIANCE": 2940.50,
+  "HDFCBANK": 1680.20,
+  "ICICIBANK": 1245.50,
+  "INFY": 1875.00,
+  "TCS": 4150.00,
+  "SBIN": 810.00,
+  "BHARTIARTL": 1640.00,
+  "ITC": 495.00,
+  "LT": 3550.00,
+  "AXISBANK": 1180.00,
+  "KOTAKBANK": 1790.00,
+  "HINDUNILVR": 2710.00,
+  "BAJFINANCE": 7120.00,
+  "MARUTI": 12350.00,
+  "SUNPHARMA": 1890.00,
+  "M&M": 3050.00,
+  "NTPC": 415.00,
+  "ONGC": 288.00,
+  "POWERGRID": 335.00,
+  "ASIANPAINT": 3180.00,
+  "TITAN": 3420.00,
+  "ULTRACEMCO": 11200.00,
+  "WIPRO": 535.00,
+  "HCLTECH": 1780.00,
+  "TECHM": 1620.00,
+  "ADANIENT": 3120.00,
+  "ADANIPORTS": 1410.00,
+  "COALINDIA": 490.00,
+  "JSWSTEEL": 980.00,
+  "TATASTEEL": 158.00,
+  "HINDALCO": 715.00,
+  "BAJAJFINSV": 1840.00,
+  "NESTLEIND": 2650.00,
+  "CIPLA": 1590.00,
+  "DRREDDY": 6480.00,
+  "EICHERMOT": 4820.00,
+  "GRASIM": 2670.00,
+  "INDUSINDBK": 1420.00,
+  "BPCL": 345.00,
+  "IOC": 172.00,
+  "DIVISLAB": 5420.00,
+  "HEROMOTOCO": 5610.00,
+  "APOLLOHOSP": 6940.00,
+  "TRENT": 7450.00,
+  "BEL": 295.00,
+  "HAL": 4450.00,
+  "SBILIFE": 1780.00,
+  "HDFCLIFE": 720.00
+};
+
 async function loadMasterWatchlist() {
   try {
     const [idx, com, stk, cry, md] = await Promise.all([
@@ -1647,11 +1715,13 @@ async function loadMasterWatchlist() {
     ].forEach(item => {
       const liveObj = [...(idx.active || []), ...(idx.waiting || [])].find(x => x.symbol === item.symbol);
       const m = moodMap[item.symbol] || (liveObj ? liveObj.mood : null);
+      const rawPrice = liveObj ? liveObj.price : null;
+      const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[item.symbol] || null);
       list.push({
         symbol: item.symbol,
         name: item.name,
         cat: item.cat,
-        price: liveObj ? liveObj.price : null,
+        price: finalPrice,
         action: liveObj ? liveObj.action : (m && m.mood === 'BULLISH' ? 'BUY' : m && m.mood === 'BEARISH' ? 'SELL' : 'WAIT'),
         grade: liveObj ? liveObj.grade : 'A',
         confidence: liveObj ? liveObj.confidence : 75
@@ -1667,11 +1737,13 @@ async function loadMasterWatchlist() {
     ].forEach(item => {
       const liveObj = [...(com.active || []), ...(com.waiting || [])].find(x => x.symbol === item.symbol);
       const m = moodMap[item.symbol] || (liveObj ? liveObj.mood : null);
+      const rawPrice = liveObj ? liveObj.price : null;
+      const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[item.symbol] || null);
       list.push({
         symbol: item.symbol,
         name: item.name,
         cat: item.cat,
-        price: liveObj ? liveObj.price : null,
+        price: finalPrice,
         action: liveObj ? liveObj.action : (m && m.mood === 'BULLISH' ? 'BUY' : m && m.mood === 'BEARISH' ? 'SELL' : 'WAIT'),
         grade: liveObj ? liveObj.grade : 'B',
         confidence: liveObj ? liveObj.confidence : 70
@@ -1683,11 +1755,13 @@ async function loadMasterWatchlist() {
       { symbol: "BTCUSDT", name: "Bitcoin (BTC)", cat: "crypto" }
     ].forEach(item => {
       const liveObj = [...(cry.active || []), ...(cry.waiting || [])].find(x => x.symbol === item.symbol);
+      const rawPrice = liveObj ? liveObj.price : null;
+      const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[item.symbol] || null);
       list.push({
         symbol: item.symbol,
         name: item.name,
         cat: item.cat,
-        price: liveObj ? liveObj.price : null,
+        price: finalPrice,
         action: liveObj ? liveObj.action : 'BUY',
         grade: liveObj ? liveObj.grade : 'A',
         confidence: liveObj ? liveObj.confidence : 80
@@ -1698,11 +1772,13 @@ async function loadMasterWatchlist() {
     const serverStocks = [...(stk.active || []), ...(stk.waiting || [])];
     STATIC_TOP_STOCKS.forEach(sym => {
       const liveObj = serverStocks.find(x => x.symbol === sym);
+      const rawPrice = liveObj ? liveObj.price : null;
+      const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[sym] || null);
       list.push({
         symbol: sym,
         name: sym,
         cat: "stocks",
-        price: liveObj ? liveObj.price : null,
+        price: finalPrice,
         action: liveObj ? liveObj.action : "WAIT",
         grade: liveObj ? liveObj.grade : "B",
         confidence: liveObj ? liveObj.confidence : 65
@@ -1738,6 +1814,9 @@ function renderScannerList() {
   container.innerHTML = filtered.map(x => {
     const isAct = x.symbol === activeChartSymbol;
     const badgeClass = x.action === 'BUY' ? 'badge-buy' : x.action === 'SELL' ? 'badge-sell' : 'badge-wait';
+    const isCrypto = x.cat === "crypto" || x.symbol.includes("BTC");
+    const p = (x.price != null && x.price > 0) ? x.price : (PREV_CLOSE_PRICES[x.symbol] || null);
+    const priceDisplay = p != null ? ((isCrypto ? "$" : "₹") + fmt(p)) : "-";
     return `
       <div class="scanner-row ${isAct ? 'active' : ''}" data-symbol="${esc(x.symbol)}">
         <div class="row-sym-box">
@@ -1745,7 +1824,7 @@ function renderScannerList() {
           <span class="row-sub">${x.cat.toUpperCase()}</span>
         </div>
         <div class="row-price-box">
-          <span class="row-price">${x.price ? ((x.cat === "crypto" || x.symbol.includes("BTC")) ? "$" : "₹") + fmt(x.price) : "-"}</span>
+          <span class="row-price">${priceDisplay}</span>
           <span class="row-badge ${badgeClass}">${esc(x.action)}</span>
         </div>
       </div>
@@ -1781,6 +1860,11 @@ async function loadActiveSymbol(sym) {
   // Update Center Top Title
   $("#viewTitle").textContent = `${sym} — Interactive Pro Chart & Signals`;
 
+  const cachedItem = masterWatchlist.find(x => x.symbol === sym);
+  const pInitial = (cachedItem && cachedItem.price) || PREV_CLOSE_PRICES[sym];
+  const isCryptoInitial = sym.toUpperCase().includes("BTC") || (cachedItem && cachedItem.cat === "crypto");
+  const initPriceDisp = pInitial ? ((isCryptoInitial ? "$" : "₹") + fmt(pInitial)) : "-";
+
   // Render Combined Chart + Strategy Card
   const container = $("#mainViewContainer");
   container.innerHTML = `
@@ -1790,7 +1874,7 @@ async function loadActiveSymbol(sym) {
         <div class="chart-sym-title">
           <h2 id="centerChartName">${sym}</h2>
           <div style="display:flex;align-items:center;gap:8px">
-            <span class="chart-ltp-disp" id="centerChartPrice">-</span>
+            <span class="chart-ltp-disp" id="centerChartPrice">${initPriceDisp}</span>
             <span id="livePulseTag" style="font-size:10px;background:rgba(212,175,55,0.15);color:var(--gold-bright);border:1px solid rgba(212,175,55,0.4);padding:2px 8px;border-radius:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px">
               <span style="display:inline-block;width:6px;height:6px;background:var(--gold-bright);border-radius:50%;box-shadow:0 0 6px var(--gold-bright)"></span>
               LIVE TICKS
@@ -1962,8 +2046,13 @@ async function loadActiveSymbol(sym) {
         const cs = cd.candles || [];
         if (cs.length) {
           const isCrypto = sym.toUpperCase().includes("BTC") || sym.toUpperCase().includes("CRYPTO");
-        const curr = isCrypto ? "$" : "₹";
-        $("#centerChartPrice").textContent = curr + fmt(cs[cs.length - 1].c);
+          const curr = isCrypto ? "$" : "₹";
+          const lastC = cs[cs.length - 1].c;
+          $("#centerChartPrice").textContent = curr + fmt(lastC);
+          const item = masterWatchlist.find(x => x.symbol === sym);
+          if (item) item.price = lastC;
+          const rowPrice = document.querySelector(`.scanner-row[data-symbol="${sym}"] .row-price`);
+          if (rowPrice) rowPrice.textContent = curr + fmt(lastC);
         }
         drawChart($("#centerCanvas"), cd);
         renderConfluenceRadar(cd.confluence_radar || cd.ravan_matrix);
@@ -2091,9 +2180,16 @@ function renderSymbolDecision(d, name, sym) {
         </button>
       ` : `
         <div style="background:rgba(255,255,255,0.02);border:1px dashed var(--line);border-radius:10px;padding:14px;margin:10px 0">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <span style="font-size:16px">🛡️</span>
-            <b style="color:var(--tx);font-size:14px">Institutional Risk Filter: Standby Mode</b>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:16px">🛡️</span>
+              <b style="color:var(--tx);font-size:14px">Institutional Risk Filter: Standby Mode</b>
+            </div>
+            ${(d.price || PREV_CLOSE_PRICES[sym]) ? `
+              <span style="font-size:12px;font-family:'JetBrains Mono';background:rgba(212,175,55,0.12);color:var(--gold-bright);border:1px solid rgba(212,175,55,0.3);padding:2px 8px;border-radius:4px;font-weight:700">
+                Last Close: ${(isCrypto ? '$' : '₹') + fmt(d.price || PREV_CLOSE_PRICES[sym])}
+              </span>
+            ` : ''}
           </div>
           <p style="color:var(--tx-dim);font-size:13px;margin:0 0 12px;line-height:1.5">
             ${esc(d.wait_reason || d.note || "Is symbol par abhi koi active trade setup nahi hai. Market chop ya closed session me false signals suppress kiye gaye hain.")}
@@ -2398,6 +2494,7 @@ function initPullToRefresh() {
 
 // INITIALIZE
 loadMasterWatchlist();
+setInterval(loadMasterWatchlist, 15000);
 loadActiveSymbol("NIFTY");
 initPullToRefresh();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});

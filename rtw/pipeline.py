@@ -255,7 +255,9 @@ class Orchestrator:
             if scope == "core" and sp.tab == "stocks" or scope == "stocks" and sp.tab != "stocks":
                 continue
             if not self.demo and not is_open(sp.segment, now, self.provider.holidays()):
-                save_decision(self.con, sp.symbol, now, {"symbol": sp.symbol, "action": "WAIT", "wait_reason": f"{sp.segment} market band hai", "S": 0.0, "A": 0.0})
+                c_row = self.con.execute("SELECT close FROM candles WHERE symbol=? ORDER BY ts DESC LIMIT 1", (sp.symbol,)).fetchone()
+                last_price = c_row[0] if (c_row and c_row[0] is not None) else None
+                save_decision(self.con, sp.symbol, now, {"symbol": sp.symbol, "name": sp.name, "price": last_price, "action": "WAIT", "wait_reason": f"{sp.segment} market band hai", "S": 0.0, "A": 0.0})
                 continue
             try:
                 d = self.analyze_spec(sp, now, ctx, stats, prot)
@@ -437,6 +439,10 @@ class Orchestrator:
         cached = load_decisions(self.con).get(sp.symbol)
         if cached and not mkt_open:
             cached = dict(cached)
+            if not cached.get("price"):
+                c_row = self.con.execute("SELECT close FROM candles WHERE symbol=? ORDER BY ts DESC LIMIT 1", (sp.symbol,)).fetchone()
+                if c_row and c_row[0] is not None:
+                    cached["price"] = c_row[0]
             cached["info_only"] = True
             cached["note"] = "Market abhi closed hai. Yeh last session ka calculated setup hai."
             return {"found": True, "symbol": sp.symbol, "name": sp.name, "decision": cached}

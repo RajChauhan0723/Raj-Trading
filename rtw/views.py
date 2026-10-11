@@ -110,14 +110,19 @@ def markets_view(con, tab: str, now: datetime, settings, specs: list) -> dict:
         if sp.tab != tab:
             continue
         d = dec.get(sp.symbol, {})
+        price = d.get("price")
+        if price is None:
+            c_row = con.execute("SELECT close FROM candles WHERE symbol=? ORDER BY ts DESC LIMIT 1", (sp.symbol,)).fetchone()
+            if c_row and c_row[0] is not None:
+                price = c_row[0]
         rows.append({"symbol": sp.symbol, "name": sp.name, "action": d.get("action", "WAIT"), "grade": d.get("grade"),
-                     "confidence": d.get("confidence"), "price": d.get("price"), "regime": d.get("regime"), "paper": d.get("paper", True),
+                     "confidence": d.get("confidence"), "price": price, "regime": d.get("regime"), "paper": d.get("paper", True),
                      "reasons": (d.get("reasons") or [])[:3], "wait_reason": d.get("wait_reason", ""), "news_mode": d.get("news_mode"),
                      "instrument": d.get("instrument"), "plan": d.get("plan"), "mood": mood_of(d), "open": bool(is_open(sp.segment, now)) if settings.mode != "DEMO" else True})
     active = sorted([r for r in rows if r["action"] in ("BUY", "SELL")], key=lambda r: -(r["confidence"] or 0))
     waits = [r for r in rows if r["action"] not in ("BUY", "SELL")]
     if tab == "stocks":
-        return {"tab": tab, "active": active, "wait_count": len(waits), "waiting": [{"symbol": r["symbol"], "mood": r.get("mood")} for r in waits]}
+        return {"tab": tab, "active": active, "wait_count": len(waits), "waiting": [{"symbol": r["symbol"], "name": r["name"], "price": r.get("price"), "mood": r.get("mood")} for r in waits]}
     return {"tab": tab, "active": active, "waiting": waits, "wait_count": len(waits)}
 
 
