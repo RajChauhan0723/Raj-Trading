@@ -137,9 +137,37 @@ def create_app(orc, now_fn=lambda: datetime.now(IST)) -> FastAPI:
             pass
         return {"ok": True, "symbol": sym, "action": action, "broadcasted": True}
 
+    @app.get("/api/scanner/master")
+    def scanner_master():
+        now = now_fn()
+        specs = orc.specs(now)
+        out = {}
+        for tab in TABS:
+            out[tab] = markets_view(orc.con, tab, now, st, specs)
+        return out
+
+    @app.get("/sw.js")
+    def sw():
+        return FileResponse(
+            os.path.join(WEB_DIR, "sw.js"),
+            media_type="application/javascript",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
+
     @app.get("/")
     def index():
-        return FileResponse(os.path.join(WEB_DIR, "index.html"))
+        return FileResponse(
+            os.path.join(WEB_DIR, "index.html"),
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
 
     if os.path.isdir(WEB_DIR):
         app.mount("/", StaticFiles(directory=WEB_DIR), name="web")

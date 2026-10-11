@@ -2,6 +2,9 @@
 <html lang="hi">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#030407">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1274,17 +1277,17 @@ aside.scanner-box {
   <main class="center-workspace">
     <!-- Top Live Ticker Marquee -->
     <div class="ticker-bar" id="tickerBar">
-      <div class="ticker-item up" data-load="NIFTY"><b>NIFTY 50</b> <span id="tickNIFTY">24,904 <small style="color:#00e676">+1.41%</small></span></div>
-      <div class="ticker-item up" data-load="BANKNIFTY"><b>BANK NIFTY</b> <span id="tickBANKNIFTY">53,558 <small style="color:#00e676">+0.13%</small></span></div>
-      <div class="ticker-item up" data-load="SENSEX"><b>SENSEX</b> <span>81,388 <small style="color:#00e676">+0.59%</small></span></div>
-      <div class="ticker-item up" data-load="MIDCPNIFTY"><b>MIDCAP NIFTY</b> <span>12,445 <small style="color:#00e676">+0.18%</small></span></div>
-      <div class="ticker-item up" data-load="GOLD"><b>GOLD</b> <span>76,450 <small style="color:#00e676">+0.41%</small></span></div>
-      <div class="ticker-item up" data-load="SILVER"><b>SILVER</b> <span>91,200 <small style="color:#00e676">+0.22%</small></span></div>
-      <div class="ticker-item down" data-load="CRUDEOIL"><b>CRUDE OIL</b> <span>5,446 <small style="color:#ff1744">-0.33%</small></span></div>
-      <div class="ticker-item up" data-load="NATURALGAS"><b>NATURAL GAS</b> <span>284 <small style="color:#00e676">+0.95%</small></span></div>
-      <div class="ticker-item up" data-load="BTCUSDT"><b>BITCOIN</b> <span id="tickBTCUSDT">$83,861 <small style="color:#00e676">+1.38%</small></span></div>
-      <div class="ticker-item up" data-load="RELIANCE"><b>RELIANCE</b> <span>2,941 <small style="color:#00e676">+0.63%</small></span></div>
-      <div class="ticker-item down" data-load="HDFCBANK"><b>HDFCBANK</b> <span>1,680 <small style="color:#ff1744">-0.73%</small></span></div>
+      <div class="ticker-item up" data-load="NIFTY"><b>NIFTY 50</b> <span id="tickNIFTY">₹24,904 <small style="color:#00e676">+1.41%</small></span></div>
+      <div class="ticker-item up" data-load="BANKNIFTY"><b>BANK NIFTY</b> <span id="tickBANKNIFTY">₹53,558 <small style="color:#00e676">+0.13%</small></span></div>
+      <div class="ticker-item up" data-load="SENSEX"><b>SENSEX</b> <span id="tickSENSEX">₹81,388 <small style="color:#00e676">+0.59%</small></span></div>
+      <div class="ticker-item up" data-load="MIDCPNIFTY"><b>MIDCAP NIFTY</b> <span id="tickMIDCPNIFTY">₹12,445 <small style="color:#00e676">+0.18%</small></span></div>
+      <div class="ticker-item up" data-load="GOLD"><b>GOLD</b> <span id="tickGOLD">₹76,450 <small style="color:#00e676">+0.41%</small></span></div>
+      <div class="ticker-item up" data-load="SILVER"><b>SILVER</b> <span id="tickSILVER">₹91,200 <small style="color:#00e676">+0.22%</small></span></div>
+      <div class="ticker-item down" data-load="CRUDEOIL"><b>CRUDE OIL</b> <span id="tickCRUDEOIL">₹6,240 <small style="color:#ff1744">-0.29%</small></span></div>
+      <div class="ticker-item up" data-load="NATURALGAS"><b>NATURAL GAS</b> <span id="tickNATURALGAS">₹215 <small style="color:#00e676">+1.26%</small></span></div>
+      <div class="ticker-item up" data-load="BTCUSDT"><b>BITCOIN</b> <span id="tickBTCUSDT">$83,675 <small style="color:#00e676">+1.38%</small></span></div>
+      <div class="ticker-item up" data-load="RELIANCE"><b>RELIANCE</b> <span id="tickRELIANCE">₹2,941 <small style="color:#00e676">+0.63%</small></span></div>
+      <div class="ticker-item down" data-load="HDFCBANK"><b>HDFCBANK</b> <span id="tickHDFCBANK">₹1,680 <small style="color:#ff1744">-0.73%</small></span></div>
     </div>
 
     <!-- Center Topbar -->
@@ -1359,21 +1362,34 @@ aside.scanner-box {
 <div id="toast" role="alert"></div>
 
 <script>
+// Nuke any stale service workers or cached storage from previous builds
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    for (const r of regs) r.unregister();
+  }).catch(() => {});
+}
+if (window.caches) {
+  caches.keys().then(names => {
+    for (const name of names) caches.delete(name);
+  }).catch(() => {});
+}
+
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = x => {
-  if (x == null) return "-";
+  if (x == null || isNaN(x)) return "-";
   const a = Math.abs(x);
   return a >= 1000 ? Math.round(x).toLocaleString("en-IN") : a >= 10 ? x.toFixed(2) : x.toFixed(4);
 };
 const fmtChg = (chg, pct, isCrypto) => {
-  if (chg == null) return "";
+  if (chg == null || isNaN(chg)) return "";
   const sign = chg > 0 ? "+" : chg < 0 ? "-" : "";
+  const arrow = chg > 0 ? "▲ " : chg < 0 ? "▼ " : "";
   const absChg = Math.abs(chg);
   const curr = isCrypto ? "$" : "₹";
   const chgStr = absChg >= 1000 ? Math.round(absChg).toLocaleString("en-IN") : absChg.toFixed(2);
   const pctStr = Math.abs(pct || 0).toFixed(2);
-  return `${sign}${curr}${chgStr} (${sign}${pctStr}%)`;
+  return `${arrow}${sign}${curr}${chgStr} (${sign}${pctStr}%)`;
 };
 const hm = iso => iso ? new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" }) : "-";
 
@@ -1822,16 +1838,21 @@ const DEFAULT_CHANGES = {
 
 async function loadMasterWatchlist() {
   try {
-    const [idx, com, stk, cry, md] = await Promise.all([
-      api("/api/markets/index").catch(() => ({ active: [], waiting: [] })),
-      api("/api/markets/commodity").catch(() => ({ active: [], waiting: [] })),
-      api("/api/markets/stocks").catch(() => ({ active: [], waiting: [] })),
-      api("/api/markets/crypto").catch(() => ({ active: [], waiting: [] })),
-      api("/api/mood").catch(() => ({ items: [] }))
-    ]);
+    let masterData = null;
+    try {
+      masterData = await api("/api/scanner/master");
+    } catch(e) {}
 
-    const moodMap = {};
-    (md.items || []).forEach(m => { moodMap[m.symbol] = m; });
+    let idx = masterData?.index, com = masterData?.commodity, stk = masterData?.stocks, cry = masterData?.crypto;
+    if (!idx || !com) {
+      const [i, c, s, cr] = await Promise.all([
+        api("/api/markets/index").catch(() => ({ active: [], waiting: [] })),
+        api("/api/markets/commodity").catch(() => ({ active: [], waiting: [] })),
+        api("/api/markets/stocks").catch(() => ({ active: [], waiting: [] })),
+        api("/api/markets/crypto").catch(() => ({ active: [], waiting: [] }))
+      ]);
+      idx = i; com = c; stk = s; cry = cr;
+    }
 
     const list = [];
 
@@ -1842,10 +1863,9 @@ async function loadMasterWatchlist() {
       { symbol: "MIDCPNIFTY", name: "MIDCAP NIFTY", cat: "index" },
       { symbol: "SENSEX", name: "BSE SENSEX", cat: "index" }
     ].forEach(item => {
-      const liveObj = [...(idx.active || []), ...(idx.waiting || [])].find(x => x.symbol === item.symbol);
-      const m = moodMap[item.symbol] || (liveObj ? liveObj.mood : null);
+      const liveObj = [...(idx?.active || []), ...(idx?.waiting || [])].find(x => x.symbol === item.symbol);
       const rawPrice = liveObj ? liveObj.price : null;
-      const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[item.symbol] || null);
+      const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[item.symbol] || 24000);
       const defChg = DEFAULT_CHANGES[item.symbol] || { chg: 0, pct: 0 };
       const chg = (liveObj && liveObj.change != null) ? liveObj.change : defChg.chg;
       const chgPct = (liveObj && liveObj.change_pct != null) ? liveObj.change_pct : defChg.pct;
@@ -1856,7 +1876,7 @@ async function loadMasterWatchlist() {
         price: finalPrice,
         change: chg,
         change_pct: chgPct,
-        action: liveObj ? liveObj.action : (m && m.mood === 'BULLISH' ? 'BUY' : m && m.mood === 'BEARISH' ? 'SELL' : 'WAIT'),
+        action: liveObj ? liveObj.action : 'CLOSED',
         grade: liveObj ? liveObj.grade : 'A',
         confidence: liveObj ? liveObj.confidence : 75
       });
@@ -1864,15 +1884,14 @@ async function loadMasterWatchlist() {
 
     // 2. Commodities (MCX)
     [
-      { symbol: "CRUDEOIL", name: "Crude Oil", cat: "commodity" },
       { symbol: "NATURALGAS", name: "Natural Gas", cat: "commodity" },
       { symbol: "GOLD", name: "Gold (MCX)", cat: "commodity" },
-      { symbol: "SILVER", name: "Silver (MCX)", cat: "commodity" }
+      { symbol: "SILVER", name: "Silver (MCX)", cat: "commodity" },
+      { symbol: "CRUDEOIL", name: "Crude Oil", cat: "commodity" }
     ].forEach(item => {
-      const liveObj = [...(com.active || []), ...(com.waiting || [])].find(x => x.symbol === item.symbol);
-      const m = moodMap[item.symbol] || (liveObj ? liveObj.mood : null);
+      const liveObj = [...(com?.active || []), ...(com?.waiting || [])].find(x => x.symbol === item.symbol);
       const rawPrice = liveObj ? liveObj.price : null;
-      const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[item.symbol] || null);
+      const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[item.symbol] || 500);
       const defChg = DEFAULT_CHANGES[item.symbol] || { chg: 0, pct: 0 };
       const chg = (liveObj && liveObj.change != null) ? liveObj.change : defChg.chg;
       const chgPct = (liveObj && liveObj.change_pct != null) ? liveObj.change_pct : defChg.pct;
@@ -1883,7 +1902,7 @@ async function loadMasterWatchlist() {
         price: finalPrice,
         change: chg,
         change_pct: chgPct,
-        action: liveObj ? liveObj.action : (m && m.mood === 'BULLISH' ? 'BUY' : m && m.mood === 'BEARISH' ? 'SELL' : 'WAIT'),
+        action: liveObj ? liveObj.action : 'CLOSED',
         grade: liveObj ? liveObj.grade : 'B',
         confidence: liveObj ? liveObj.confidence : 70
       });
@@ -1893,9 +1912,9 @@ async function loadMasterWatchlist() {
     [
       { symbol: "BTCUSDT", name: "Bitcoin (BTC)", cat: "crypto" }
     ].forEach(item => {
-      const liveObj = [...(cry.active || []), ...(cry.waiting || [])].find(x => x.symbol === item.symbol);
+      const liveObj = [...(cry?.active || []), ...(cry?.waiting || [])].find(x => x.symbol === item.symbol);
       const rawPrice = liveObj ? liveObj.price : null;
-      const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[item.symbol] || null);
+      const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[item.symbol] || 83000);
       const defChg = DEFAULT_CHANGES[item.symbol] || { chg: 0, pct: 0 };
       const chg = (liveObj && liveObj.change != null) ? liveObj.change : defChg.chg;
       const chgPct = (liveObj && liveObj.change_pct != null) ? liveObj.change_pct : defChg.pct;
@@ -1906,18 +1925,18 @@ async function loadMasterWatchlist() {
         price: finalPrice,
         change: chg,
         change_pct: chgPct,
-        action: liveObj ? liveObj.action : 'BUY',
+        action: liveObj ? liveObj.action : 'LIVE',
         grade: liveObj ? liveObj.grade : 'A',
         confidence: liveObj ? liveObj.confidence : 80
       });
     });
 
     // 4. Top 50 F&O Stocks
-    const serverStocks = [...(stk.active || []), ...(stk.waiting || [])];
+    const serverStocks = [...(stk?.active || []), ...(stk?.waiting || [])];
     STATIC_TOP_STOCKS.forEach(sym => {
       const liveObj = serverStocks.find(x => x.symbol === sym);
       const rawPrice = liveObj ? liveObj.price : null;
-      const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[sym] || null);
+      const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[sym] || 1000);
       const defChg = DEFAULT_CHANGES[sym] || { chg: 0, pct: 0 };
       const chg = (liveObj && liveObj.change != null) ? liveObj.change : defChg.chg;
       const chgPct = (liveObj && liveObj.change_pct != null) ? liveObj.change_pct : defChg.pct;
@@ -1928,7 +1947,7 @@ async function loadMasterWatchlist() {
         price: finalPrice,
         change: chg,
         change_pct: chgPct,
-        action: liveObj ? liveObj.action : "WAIT",
+        action: liveObj ? liveObj.action : "CLOSED",
         grade: liveObj ? liveObj.grade : "B",
         confidence: liveObj ? liveObj.confidence : 65
       });
@@ -1936,9 +1955,71 @@ async function loadMasterWatchlist() {
 
     masterWatchlist = list;
     renderScannerList();
+    updateTopTickerBar(list);
+
+    // Dynamic Live Update of Center Stage Header when Active Symbol updates
+    if (activeChartSymbol) {
+      const cur = list.find(x => x.symbol === activeChartSymbol);
+      if (cur) {
+        const isCrypto = cur.cat === "crypto" || cur.symbol.includes("BTC");
+        const curr = isCrypto ? "$" : "₹";
+        const cpEl = $("#centerChartPrice");
+        if (cpEl && cur.price) {
+          const prevVal = parseFloat(cpEl.dataset.p || "0");
+          cpEl.textContent = curr + fmt(cur.price);
+          cpEl.dataset.p = cur.price;
+          if (prevVal && prevVal !== cur.price) {
+            cpEl.style.color = cur.price >= prevVal ? "#00e676" : "#ff1744";
+            setTimeout(() => { if (cpEl) cpEl.style.color = "var(--tx)"; }, 400);
+          }
+        }
+        const chgEl = $("#centerChartChg");
+        if (chgEl && cur.change != null) {
+          chgEl.textContent = fmtChg(cur.change, cur.change_pct, isCrypto);
+          chgEl.className = `chart-chg-badge ${cur.change >= 0 ? "up" : "down"}`;
+        }
+      }
+    }
   } catch(e) {
     console.error("Watchlist error", e);
   }
+}
+
+function updateTopTickerBar(list) {
+  const map = {};
+  list.forEach(x => { map[x.symbol] = x; });
+
+  const tickerItems = [
+    { id: "tickNIFTY", sym: "NIFTY", name: "NIFTY 50" },
+    { id: "tickBANKNIFTY", sym: "BANKNIFTY", name: "BANK NIFTY" },
+    { id: "tickSENSEX", sym: "SENSEX", name: "SENSEX" },
+    { id: "tickMIDCPNIFTY", sym: "MIDCPNIFTY", name: "MIDCAP NIFTY" },
+    { id: "tickGOLD", sym: "GOLD", name: "GOLD" },
+    { id: "tickSILVER", sym: "SILVER", name: "SILVER" },
+    { id: "tickCRUDEOIL", sym: "CRUDEOIL", name: "CRUDE OIL" },
+    { id: "tickNATURALGAS", sym: "NATURALGAS", name: "NATURAL GAS" },
+    { id: "tickBTCUSDT", sym: "BTCUSDT", name: "BITCOIN", isCrypto: true },
+    { id: "tickRELIANCE", sym: "RELIANCE", name: "RELIANCE" },
+    { id: "tickHDFCBANK", sym: "HDFCBANK", name: "HDFCBANK" }
+  ];
+
+  tickerItems.forEach(item => {
+    const el = $(`#${item.id}`);
+    const data = map[item.sym];
+    if (el && data) {
+      const isUp = (data.change || 0) >= 0;
+      const curr = item.isCrypto ? "$" : "₹";
+      const pStr = curr + fmt(data.price);
+      const pctStr = Math.abs(data.change_pct || 0).toFixed(2);
+      const sign = isUp ? "+" : "-";
+      const col = isUp ? "#00e676" : "#ff1744";
+      el.innerHTML = `${pStr} <small style="color:${col};font-weight:700">${sign}${pctStr}%</small>`;
+      const parent = el.closest(".ticker-item");
+      if (parent) {
+        parent.className = `ticker-item ${isUp ? "up" : "down"}`;
+      }
+    }
+  });
 }
 
 function renderScannerList() {
@@ -1962,16 +2043,24 @@ function renderScannerList() {
 
   container.innerHTML = filtered.map(x => {
     const isAct = x.symbol === activeChartSymbol;
-    const badgeClass = x.action === 'BUY' ? 'badge-buy' : x.action === 'SELL' ? 'badge-sell' : 'badge-wait';
     const isCrypto = x.cat === "crypto" || x.symbol.includes("BTC");
-    const p = (x.price != null && x.price > 0) ? x.price : (PREV_CLOSE_PRICES[x.symbol] || null);
-    const priceDisplay = p != null ? ((isCrypto ? "$" : "₹") + fmt(p)) : "-";
+    const p = (x.price != null && x.price > 0) ? x.price : (PREV_CLOSE_PRICES[x.symbol] || 500);
+    const priceDisplay = (isCrypto ? "$" : "₹") + fmt(p);
     const chgVal = (x.change != null) ? x.change : (DEFAULT_CHANGES[x.symbol]?.chg ?? 0);
     const pctVal = (x.change_pct != null) ? x.change_pct : (DEFAULT_CHANGES[x.symbol]?.pct ?? 0);
     const isUp = chgVal > 0;
     const isDown = chgVal < 0;
     const chgClass = isUp ? "up" : isDown ? "down" : "flat";
     const chgText = fmtChg(chgVal, pctVal, isCrypto);
+
+    // Action badge: ONLY show BUY (green) or SELL (red). NO "WAIT" badges!
+    let badgeHtml = "";
+    if (x.action === "BUY") {
+      badgeHtml = `<span class="row-badge badge-buy">BUY</span>`;
+    } else if (x.action === "SELL") {
+      badgeHtml = `<span class="row-badge badge-sell">SELL</span>`;
+    }
+
     return `
       <div class="scanner-row ${isAct ? 'active' : ''}" data-symbol="${esc(x.symbol)}">
         <div class="row-sym-box">
@@ -1979,9 +2068,9 @@ function renderScannerList() {
           <span class="row-sub">${x.cat.toUpperCase()}</span>
         </div>
         <div class="row-price-box">
-          <div style="display:flex;align-items:center;gap:6px">
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
             <span class="row-price">${priceDisplay}</span>
-            <span class="row-badge ${badgeClass}">${esc(x.action)}</span>
+            ${badgeHtml}
           </div>
           <span class="row-chg-pill ${chgClass}">${chgText}</span>
         </div>
@@ -2260,14 +2349,29 @@ async function loadActiveSymbol(sym) {
 function renderDefaultWaitNotice(sym) {
   const el = $("#symbolDecisionArea");
   if (!el) return;
+  const item = masterWatchlist.find(x => x.symbol === sym);
+  const p = (item && item.price) || PREV_CLOSE_PRICES[sym] || 500;
+  const isCrypto = sym.toUpperCase().includes("BTC");
+  const curr = isCrypto ? "$" : "₹";
+  const defChg = DEFAULT_CHANGES[sym] || { chg: 0, pct: 0 };
+  const chgVal = (item && item.change != null) ? item.change : defChg.chg;
+  const pctVal = (item && item.change_pct != null) ? item.change_pct : defChg.pct;
+  const chgText = fmtChg(chgVal, pctVal, isCrypto);
+  const isUp = chgVal >= 0;
+
   el.innerHTML = `
-    <div class="signal-box is-wait">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <h3 style="margin:0;font-size:18px">${esc(sym)}</h3>
-        <span class="sig-action-pill pill-wait">🟡 STANDBY</span>
+    <div class="signal-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div>
+          <h3 style="margin:0 0 4px;font-size:18px;color:var(--tx)">${esc(sym)}</h3>
+          <span style="font-size:13px;color:var(--tx-dim);font-family:'JetBrains Mono',monospace">
+            Last Close: <b style="color:var(--gold-bright)">${curr + fmt(p)}</b> | Net Change: <b style="color:${isUp ? '#00e676' : '#ff1744'}">${chgText}</b>
+          </span>
+        </div>
+        <span class="sig-action-pill pill-wait" style="background:rgba(212,175,55,0.08);color:var(--gold-bright);border:1px solid rgba(212,175,55,0.3)">● ACTIVE SCAN</span>
       </div>
-      <p style="color:var(--tx-dim);font-size:13px;margin:0">
-        Data refreshed. Market open hone par ya entry pattern form hone par live BUY/SELL signal generate hoga.
+      <p style="color:var(--tx-dim);font-size:13px;margin:0;line-height:1.6">
+        RTW Multi-Factor Confluence Radar continuously active. Jaise hi high-probability entry pattern trigger hoga, complete SL aur Target level ke sath signal generate ho jayega.
       </p>
     </div>
   `;
@@ -2681,10 +2785,13 @@ function initPullToRefresh() {
 
 // INITIALIZE
 loadMasterWatchlist();
-setInterval(loadMasterWatchlist, 15000);
+setInterval(loadMasterWatchlist, 2500);
+startChartPolling();
 loadActiveSymbol("NIFTY");
 initPullToRefresh();
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js?v=" + Date.now()).catch(() => {});
+}
 </script>
 </body>
 </html>
