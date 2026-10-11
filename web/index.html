@@ -826,6 +826,47 @@ let chartIndicators = {
   zones: true
 };
 let lastChartData = null;
+let chartMode = "canvas"; // 'canvas' or 'tradingview'
+
+function getTVSymbol(sym) {
+  const s = (sym || "").toUpperCase().trim();
+  const map = {
+    "NIFTY": "NSE:NIFTY", "NIFTY 50": "NSE:NIFTY",
+    "BANKNIFTY": "NSE:BANKNIFTY", "BANK NIFTY": "NSE:BANKNIFTY",
+    "MIDCPNIFTY": "NSE:NIFTY_MID_SELECT", "SENSEX": "BSE:SENSEX",
+    "GOLD": "MCX:GOLD1!", "GOLD (MCX)": "MCX:GOLD1!",
+    "SILVER": "MCX:SILVER1!", "SILVER (MCX)": "MCX:SILVER1!",
+    "CRUDEOIL": "MCX:CRUDEOIL1!", "CRUDE OIL": "MCX:CRUDEOIL1!",
+    "NATURALGAS": "MCX:NATURALGAS1!", "NATURAL GAS": "MCX:NATURALGAS1!",
+    "BTCUSDT": "BINANCE:BTCUSDT", "BITCOIN (BTC)": "BINANCE:BTCUSDT", "BITCOIN": "BINANCE:BTCUSDT", "BTC": "BINANCE:BTCUSDT"
+  };
+  if (map[s]) return map[s];
+  if (s.includes("BTC")) return "BINANCE:BTCUSDT";
+  return "NSE:" + s.replace("&", "_");
+}
+
+let chartInterval = null;
+function startChartPolling() {
+  if (chartInterval) clearInterval(chartInterval);
+  chartInterval = setInterval(() => {
+    if ((currentView === "signals" || currentView === "charts") && activeChartSymbol && chartMode === "canvas") {
+      api(`/api/chart?q=${encodeURIComponent(activeChartSymbol)}&tf=${activeChartTF}`)
+        .then(cd => {
+          if (cd && cd.found) {
+            lastChartData = cd;
+            drawChart($("#centerCanvas"), cd);
+            renderConfluenceRadar(cd.confluence_radar || cd.ravan_matrix);
+            const cs = cd.candles || [];
+            if (cs.length) {
+              const isCrypto = activeChartSymbol.toUpperCase().includes("BTC") || activeChartSymbol.toUpperCase().includes("CRYPTO");
+              const curr = isCrypto ? "$" : "₹";
+              $("#centerChartPrice").textContent = curr + fmt(cs[cs.length - 1].c);
+            }
+          }
+        }).catch(() => {});
+    }
+  }, 8000);
+}
 
 function key() { try { return localStorage.getItem("rtw_key") || ""; } catch(e) { return ""; } }
 async function api(path, opt = {}) {
@@ -1153,7 +1194,7 @@ function renderScannerList() {
           <span class="row-sub">${x.cat.toUpperCase()}</span>
         </div>
         <div class="row-price-box">
-          <span class="row-price">${x.price ? '₹' + fmt(x.price) : '-'}</span>
+          <span class="row-price">${x.price ? ((x.cat === "crypto" || x.symbol.includes("BTC")) ? "$" : "₹") + fmt(x.price) : "-"}</span>
           <span class="row-badge ${badgeClass}">${esc(x.action)}</span>
         </div>
       </div>
@@ -1188,14 +1229,25 @@ async function loadActiveSymbol(sym) {
           <h2 id="centerChartName">${sym}</h2>
           <span class="chart-ltp-disp" id="centerChartPrice">-</span>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <div class="indicator-toggles" id="indToggles">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <!-- Live Chart Mode Switcher -->
+          <div style="display:flex;gap:2px;background:var(--bg);padding:2px;border-radius:6px;border:1px solid var(--line)">
+            <button class="scanner-tab-btn ${chartMode === 'canvas' ? 'active' : ''}" id="btnModeCanvas" title="RTW Proprietary Confluence Analysis">
+              ⚡ RTW Radar Chart
+            </button>
+            <button class="scanner-tab-btn ${chartMode === 'tradingview' ? 'active' : ''}" id="btnModeTV" style="color:var(--acc)" title="Live Streaming TradingView Widget">
+              📈 Live TV Stream
+            </button>
+          </div>
+
+          <div class="indicator-toggles" id="indToggles" style="${chartMode === 'tradingview' ? 'display:none' : 'display:flex'}">
             <button class="ind-btn ${chartIndicators.ema ? 'active' : ''}" data-ind="ema">EMA 20/50/200</button>
             <button class="ind-btn ${chartIndicators.vwap ? 'active' : ''}" data-ind="vwap">VWAP</button>
             <button class="ind-btn ${chartIndicators.supertrend ? 'active' : ''}" data-ind="supertrend">Supertrend</button>
             <button class="ind-btn ${chartIndicators.cpr ? 'active' : ''}" data-ind="cpr">CPR &amp; PDH/L</button>
             <button class="ind-btn ${chartIndicators.zones ? 'active' : ''}" data-ind="zones">Zones</button>
           </div>
+
           <div style="display:flex;gap:4px">
             ${["5m", "15m", "1h"].map(tf => `
               <button class="scanner-tab-btn ${tf === activeChartTF ? 'active' : ''}" data-ctf="${tf}">
@@ -1203,14 +1255,19 @@ async function loadActiveSymbol(sym) {
               </button>
             `).join("")}
           </div>
-          <a id="centerTVLink" href="https://www.tradingview.com/chart/?symbol=${sym}" target="_blank" rel="noopener" class="scanner-tab-btn" style="color:var(--acc);text-decoration:none">
-            TradingView ↗
+          <a id="centerTVLink" href="https://www.tradingview.com/chart/?symbol=${sym}" target="_blank" rel="noopener" class="scanner-tab-btn" style="color:var(--tx-muted);text-decoration:none" title="Open full chart in new tab">
+            ↗
           </a>
         </div>
       </div>
 
-      <div class="chart-canvas-box">
-        <canvas id="centerCanvas"></canvas>
+      <div class="chart-canvas-box" id="chartBoxArea" style="position:relative;min-height:360px">
+        <canvas id="centerCanvas" style="${chartMode === 'tradingview' ? 'display:none' : 'display:block;width:100%;height:100%'}"></canvas>
+        <div id="tvEmbedContainer" style="${chartMode === 'tradingview' ? 'display:block' : 'display:none'};width:100%;height:100%;min-height:360px">
+          ${chartMode === 'tradingview' ? `
+            <iframe src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(getTVSymbol(sym))}&interval=${activeChartTF === '1h' ? '60' : activeChartTF === '15m' ? '15' : '5'}&theme=dark&style=1&locale=in&toolbar_bg=0f172a&enable_publishing=false&hide_side_toolbar=0&allow_symbol_change=1" style="width:100%;height:100%;min-height:360px;border:none;border-radius:8px"></iframe>
+          ` : ''}
+        </div>
       </div>
 
       <!-- RTW PROPRIETARY CONFLUENCE RADAR (TRAP-FILTERED) -->
@@ -1236,6 +1293,34 @@ async function loadActiveSymbol(sym) {
       </div>
     </div>
   `;
+
+  // Bind Mode Toggle buttons
+  const btnC = $("#btnModeCanvas");
+  const btnT = $("#btnModeTV");
+  if (btnC && btnT) {
+    btnC.onclick = () => {
+      chartMode = "canvas";
+      btnC.classList.add("active");
+      btnT.classList.remove("active");
+      $("#centerCanvas").style.display = "block";
+      $("#tvEmbedContainer").style.display = "none";
+      $("#indToggles").style.display = "flex";
+      if (lastChartData) drawChart($("#centerCanvas"), lastChartData);
+    };
+    btnT.onclick = () => {
+      chartMode = "tradingview";
+      btnT.classList.add("active");
+      btnC.classList.remove("active");
+      $("#centerCanvas").style.display = "none";
+      $("#tvEmbedContainer").style.display = "block";
+      $("#indToggles").style.display = "none";
+      const tvSym = getTVSymbol(sym);
+      const tfInt = activeChartTF === '1h' ? '60' : activeChartTF === '15m' ? '15' : '5';
+      $("#tvEmbedContainer").innerHTML = `
+        <iframe src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(tvSym)}&interval=${tfInt}&theme=dark&style=1&locale=in&toolbar_bg=0f172a&enable_publishing=false&hide_side_toolbar=0&allow_symbol_change=1" style="width:100%;height:100%;min-height:360px;border:none;border-radius:8px"></iframe>
+      `;
+    };
+  }
 
   // Bind TF buttons
   container.querySelectorAll("[data-ctf]").forEach(b => {
@@ -1265,7 +1350,9 @@ async function loadActiveSymbol(sym) {
         $("#centerTVLink").href = cd.tv_url || `https://www.tradingview.com/chart/?symbol=${sym}`;
         const cs = cd.candles || [];
         if (cs.length) {
-          $("#centerChartPrice").textContent = "₹" + fmt(cs[cs.length - 1].c);
+          const isCrypto = sym.toUpperCase().includes("BTC") || sym.toUpperCase().includes("CRYPTO");
+        const curr = isCrypto ? "$" : "₹";
+        $("#centerChartPrice").textContent = curr + fmt(cs[cs.length - 1].c);
         }
         drawChart($("#centerCanvas"), cd);
         renderConfluenceRadar(cd.confluence_radar || cd.ravan_matrix);
@@ -1553,6 +1640,7 @@ $("#btnToggleScanner").onclick = () => {
 
 $("#btnHardRefresh").onclick = () => {
   loadMasterWatchlist();
+  startChartPolling();
   loadActiveSymbol(activeChartSymbol);
   showToast("Refreshed", "Live market feed updated");
 };
