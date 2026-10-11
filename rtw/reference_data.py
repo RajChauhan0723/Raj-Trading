@@ -11,8 +11,10 @@ MARKET_BASELINES: dict[str, dict] = {
     "MIDCPNIFTY": {"name": "Midcap Nifty", "price": 12445.46, "prev_close": 12422.87, "change": 22.59, "change_pct": 0.18, "segment": "NSE"},
     "SENSEX": {"name": "BSE Sensex", "price": 81388.40, "prev_close": 80908.20, "change": 480.20, "change_pct": 0.59, "segment": "BSE"},
 
-    # MCX Commodities
-    "GOLD": {"name": "Gold / Gold Mini", "price": 76450.00, "prev_close": 76140.00, "change": 310.00, "change_pct": 0.41, "segment": "MCX"},
+    # MCX & Global Commodities
+    "GOLD": {"name": "Gold (MCX 1kg)", "price": 76450.00, "prev_close": 76140.00, "change": 310.00, "change_pct": 0.41, "segment": "MCX"},
+    "GOLDM": {"name": "Gold Mini (MCX 100g)", "price": 76420.00, "prev_close": 76115.00, "change": 305.00, "change_pct": 0.40, "segment": "MCX"},
+    "XAUUSD": {"name": "Spot Gold (XAU/USD)", "price": 2658.50, "prev_close": 2645.20, "change": 13.30, "change_pct": 0.50, "segment": "GLOBAL"},
     "SILVER": {"name": "Silver / Silver Mini", "price": 91200.00, "prev_close": 90875.62, "change": 324.38, "change_pct": 0.36, "segment": "MCX"},
     "CRUDEOIL": {"name": "Crude Oil", "price": 6240.00, "prev_close": 6258.00, "change": -18.00, "change_pct": -0.29, "segment": "MCX"},
     "NATURALGAS": {"name": "Natural Gas", "price": 215.40, "prev_close": 212.72, "change": 2.68, "change_pct": 1.26, "segment": "MCX"},

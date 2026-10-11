@@ -21,7 +21,7 @@ def session_times(segment: str, d: date):
         return time(9, 0), time(17, 0)
     if segment == "CDS_CROSS":
         return time(9, 0), time(19, 30)
-    if segment == "CRYPTO":
+    if segment in ("CRYPTO", "GLOBAL"):
         return None
     raise ValueError(f"unknown segment {segment}")
 
@@ -29,6 +29,8 @@ def session_times(segment: str, d: date):
 def is_trading_day(segment: str, d: date, holidays: set | None = None) -> bool:
     if segment == "CRYPTO":
         return True
+    if segment == "GLOBAL":
+        return d.weekday() < 5
     return d.weekday() < 5 and d not in (holidays or set())
 
 
@@ -36,6 +38,8 @@ def is_open(segment: str, now: datetime, holidays: set | None = None) -> bool:
     now = now.astimezone(IST)
     if segment == "CRYPTO":
         return True
+    if segment == "GLOBAL":
+        return is_trading_day(segment, now.date())
     if not is_trading_day(segment, now.date(), holidays):
         return False
     o, c = session_times(segment, now.date())

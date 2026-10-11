@@ -11,9 +11,9 @@ from .news import Tag, Event, tag_headline
 from .options import bs_price
 from .sessions import IST
 
-START_PRICE = {"NIFTY": 24500, "BANKNIFTY": 53000, "MIDCPNIFTY": 12500, "GOLD": 120000, "SILVER": 150000, "CRUDEOIL": 5500,
-               "NATURALGAS": 280, "USDINR": 88.5, "EURINR": 103.0, "GBPINR": 118.0, "JPYINR": 0.59, "EURUSD": 1.16,
-               "GBPUSD": 1.34, "USDJPY": 148.0, "BTCUSDT": 65000}
+START_PRICE = {"NIFTY": 24500, "BANKNIFTY": 53000, "MIDCPNIFTY": 12500, "GOLD": 76450, "GOLDM": 76420, "XAUUSD": 2658.5, "SILVER": 91200, "CRUDEOIL": 6240,
+               "NATURALGAS": 215, "USDINR": 88.5, "EURINR": 103.0, "GBPINR": 118.0, "JPYINR": 0.59, "EURUSD": 1.16,
+               "GBPUSD": 1.34, "USDJPY": 148.0, "BTCUSDT": 83000}
 
 
 class Provider:
@@ -45,7 +45,7 @@ def _seed(*parts) -> int:
 class FakeProvider(Provider):
     """Synthetic but realistic-looking data so the whole app can be seen working with ZERO setup."""
     name = "demo"
-    TREND = {"GOLD": 0.0011, "USDINR": -0.0009, "BTCUSDT": 0.0004}      # symbols that trend in the demo
+    TREND = {"GOLD": 0.0011, "GOLDM": 0.0011, "XAUUSD": 0.0012, "USDINR": -0.0009, "BTCUSDT": 0.0004}      # symbols that trend in the demo
 
     def __init__(self, seed: int = 7):
         self.seed = seed

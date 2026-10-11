@@ -102,7 +102,7 @@ def test_regime_names():
 def test_chart_layers_bullish_trend():
     df = make_df(300, drift=0.002, vol=0.002, seed=3)
     L = chart_layers(df, True)
-    assert set(L) == {"trend", "momentum", "levels", "volume", "patterns"}
+    assert set(L) == {"trend", "momentum", "levels", "volume", "patterns", "stoch_rsi"}
     assert L["trend"].score > 0.3
     for l in L.values():
         assert -1 <= l.score <= 1 and 0 <= l.conf <= 1

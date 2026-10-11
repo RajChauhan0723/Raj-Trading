@@ -86,7 +86,9 @@ INDEX_SPECS = [
 ]
 # One spec per commodity GROUP. The contract (big/mini/micro) is chosen by capital at plan time (see choose_contract).
 COMMODITY_SPECS = [
-    Spec("GOLD", "Gold / Gold Mini", "commodity", "COMMODITY", "GOLD", "MCX", "GC=F", "GOLDM", "MCX", False, 10),
+    Spec("GOLD", "Gold (MCX 1kg)", "commodity", "COMMODITY", "GOLD", "MCX", "GC=F", "GOLD", "MCX", False, 100),
+    Spec("GOLDM", "Gold Mini (MCX 100g)", "commodity", "COMMODITY", "GOLD", "MCX", "GC=F", "GOLDM", "MCX", False, 10),
+    Spec("XAUUSD", "Spot Gold (USA / XAUUSD)", "commodity", "COMMODITY", "GOLD", "GLOBAL", "GC=F", "", "GLOBAL", False, 1),
     Spec("SILVER", "Silver / Silver Mini", "commodity", "COMMODITY", "SILVER", "MCX", "SI=F", "SILVERM", "MCX", False, 5),
     Spec("CRUDEOIL", "Crude Oil", "commodity", "COMMODITY", "CRUDE", "MCX", "CL=F", "CRUDEOILM", "MCX", False, 10),
     Spec("NATURALGAS", "Natural Gas", "commodity", "COMMODITY", "NATGAS", "MCX", "NG=F", "NATGASMINI", "MCX", False, 250),
@@ -116,6 +118,7 @@ def stock_spec(symbol: str, name: str = "") -> Spec:
 # (instrument name in master, rupee P&L per 1 price point per lot). Verify against the exchange contract specs at runtime.
 MCX_CONTRACTS = {
     "GOLD": [("GOLD", 100.0), ("GOLDM", 10.0), ("GOLDPETAL", 0.1)],
+    "GOLDM": [("GOLDM", 10.0), ("GOLDPETAL", 0.1)],
     "SILVER": [("SILVER", 30.0), ("SILVERM", 5.0), ("SILVERMIC", 1.0)],
     "CRUDE": [("CRUDEOIL", 100.0), ("CRUDEOILM", 10.0)],
     "NATGAS": [("NATURALGAS", 1250.0), ("NATGASMINI", 250.0)],

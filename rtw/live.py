@@ -75,6 +75,8 @@ class LiveProvider(Provider):
         elif spec.asset_class == "STOCK":
             row, exch = A.equity_row(m, spec.angel_name), "NSE"
         elif spec.asset_class == "COMMODITY":
+            if spec.segment == "GLOBAL" or spec.exch == "GLOBAL":
+                return None
             row, exch = A.front_future(m, spec.angel_name, "MCX", today, 3, "FUTCOM"), "MCX"
         elif spec.asset_class == "FOREX":
             row, exch = A.front_future(m, spec.angel_name, "CDS", today, 2, "FUTCUR"), "CDS"
@@ -90,6 +92,9 @@ class LiveProvider(Provider):
             if spec.exch == "BINANCE":
                 df = C.klines(spec.symbol, now, "5m", min(n, 1000))
                 return df if df is not None else Y.candles(spec.yf, now)
+            if spec.segment == "GLOBAL" or spec.exch == "GLOBAL":
+                df = Y.candles(spec.yf or "GC=F", now)
+                return df.tail(n) if df is not None else None
             t = self._angel_target(spec, now)
             if t:
                 days = 6 if spec.segment == "NSE" else 4
@@ -111,6 +116,8 @@ class LiveProvider(Provider):
         try:
             if spec.exch == "BINANCE":
                 return C.klines(spec.symbol, now, "5m", 1000)
+            if spec.segment == "GLOBAL" or spec.exch == "GLOBAL":
+                return Y.candles(spec.yf or "GC=F", now, "5m", "60d")
             t = self._angel_target(spec, now)
             if t:
                 df = self.angel.candles(t["exch"], t["token"], "5m", now - timedelta(days=days), now)
@@ -121,6 +128,9 @@ class LiveProvider(Provider):
 
     def ltp(self, spec, now):
         try:
+            if spec.segment == "GLOBAL" or spec.exch == "GLOBAL":
+                df = Y.candles(spec.yf or "GC=F", now)
+                return float(df["close"].iloc[-1]) if df is not None and len(df) else None
             t = self._angel_target(spec, now)
             if t:
                 return self.angel.ltp(t["exch"], t["symbol"], t["token"])

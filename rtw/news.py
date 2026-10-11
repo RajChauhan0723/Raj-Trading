@@ -9,7 +9,7 @@ from .layers import LayerResult
 
 # ---------- asset groups ----------
 ALIASES = {"NIFTY": "INDEX", "BANKNIFTY": "INDEX", "MIDCPNIFTY": "INDEX", "FINNIFTY": "INDEX",
-           "GOLDM": "GOLD", "GOLDGUINEA": "GOLD", "SILVERM": "SILVER", "SILVERMIC": "SILVER",
+           "GOLDM": "GOLD", "XAUUSD": "GOLD", "GOLDGUINEA": "GOLD", "SILVERM": "SILVER", "SILVERMIC": "SILVER",
            "CRUDEOILM": "CRUDE", "CRUDEOIL": "CRUDE", "NATURALGAS": "NATGAS", "NATGASMINI": "NATGAS",
            "BTCUSDT": "BTC", "BTCUSD": "BTC"}
 

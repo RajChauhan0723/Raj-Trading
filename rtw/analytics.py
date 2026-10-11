@@ -25,7 +25,7 @@ SECTOR_MAP: dict[str, str] = {
     "CRUDEOIL": "Energy", "NATURALGAS": "Energy",
     # Metals
     "TATASTEEL": "Metals", "JSWSTEEL": "Metals", "HINDALCO": "Metals",
-    "COALINDIA": "Metals", "GOLD": "Precious Metals", "SILVER": "Precious Metals",
+    "COALINDIA": "Metals", "GOLD": "Precious Metals", "GOLDM": "Precious Metals", "XAUUSD": "Precious Metals", "SILVER": "Precious Metals",
     # Auto
     "MARUTI": "Auto", "M&M": "Auto", "EICHERMOT": "Auto", "HEROMOTOCO": "Auto",
     # Pharma

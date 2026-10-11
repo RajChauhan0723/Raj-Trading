@@ -12,7 +12,9 @@ TYPICAL = {"^GSPC": 1.0, "ES=F": 1.0, "NQ=F": 1.3, "^IXIC": 1.3, "^N225": 1.2, "
 WEIGHTS = {
     "INDEX":  {"^GSPC": 1.0, "ES=F": 0.8, "^IXIC": 0.5, "^N225": 0.4, "^HSI": 0.3, "DX-Y.NYB": -0.5, "CL=F": -0.4, "^VIX": -0.8, "^TNX": -0.3, "USDINR=X": -0.3},
     "STOCK":  {"^GSPC": 0.6, "ES=F": 0.5, "^VIX": -0.5, "DX-Y.NYB": -0.2, "CL=F": -0.2},
-    "GOLD":   {"GC=F": 1.0, "DX-Y.NYB": -0.8, "^TNX": -0.5, "USDINR=X": 0.5},
+    "GOLD":   {"GC=F": 1.2, "DX-Y.NYB": -0.8, "^TNX": -0.5, "USDINR=X": 0.5},
+    "GOLDM":  {"GC=F": 1.2, "DX-Y.NYB": -0.8, "^TNX": -0.5, "USDINR=X": 0.5},
+    "XAUUSD": {"GC=F": 1.5, "DX-Y.NYB": -1.0, "^TNX": -0.6},
     "SILVER": {"SI=F": 1.0, "GC=F": 0.6, "DX-Y.NYB": -0.7, "USDINR=X": 0.5},
     "CRUDE":  {"CL=F": 1.0, "BZ=F": 0.8, "DX-Y.NYB": -0.4, "USDINR=X": 0.5, "^GSPC": 0.2},
     "NATGAS": {"NG=F": 1.0, "USDINR=X": 0.4},
@@ -27,7 +29,7 @@ WEIGHTS = {
 }
 _NAME = {"^GSPC": "S&P500", "ES=F": "S&P futures", "NQ=F": "Nasdaq fut", "^IXIC": "Nasdaq", "^N225": "Nikkei", "^HSI": "HangSeng",
          "DX-Y.NYB": "Dollar index", "CL=F": "WTI crude", "BZ=F": "Brent", "^VIX": "US VIX", "^TNX": "US10Y yield",
-         "USDINR=X": "USDINR", "GC=F": "COMEX gold", "SI=F": "COMEX silver", "NG=F": "NYMEX gas", "BTC-USD": "BTC",
+         "USDINR=X": "USDINR", "GC=F": "XAUUSD (USA Gold)", "SI=F": "COMEX silver", "NG=F": "NYMEX gas", "BTC-USD": "BTC",
          "EURUSD=X": "EURUSD", "GBPUSD=X": "GBPUSD", "JPY=X": "USDJPY"}
 
 

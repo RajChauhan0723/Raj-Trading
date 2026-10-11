@@ -194,7 +194,13 @@ class Orchestrator:
         d["extra"] = {"underlying_name": spec.name, "plan_note": d.get("plan_note", ""), "setup_key": d.get("setup_key")}
         d["instrument"] = spec.symbol
         if spec.asset_class == "COMMODITY":
-            c = choose_contract(spec.group, pl["sl_dist"], d["risk_budget"])
+            if spec.symbol == "XAUUSD":
+                d["extra"].update(lots=pl["lots"], risk_amount=pl["risk_amount"], currency="USD",
+                                  plan_note="International Spot Gold ($/oz) benchmark")
+                d["instrument"] = "XAUUSD (Spot Gold)"
+                return d
+            contract_key = spec.symbol if spec.symbol in MCX_CONTRACTS else spec.group
+            c = choose_contract(contract_key, pl["sl_dist"], d["risk_budget"])
             if not c["affordable"]:
                 return {**d, "action": "WAIT", "passed": False, "rank": 0.0, "wait_reason": "capital me sabse chhota contract bhi risk limit se bada hai"}
             pl["lots"], pl["risk_amount"] = c["lots"], c["lots"] * c["risk_per_lot"]
