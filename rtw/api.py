@@ -21,6 +21,18 @@ class SettingsIn(BaseModel):
     max_trades: int | None = None
 
 
+class TVAlertIn(BaseModel):
+    symbol: str
+    action: str
+    price: float | None = None
+    sl: float | None = None
+    t1: float | None = None
+    t2: float | None = None
+    indicator: str | None = "RAVAN 2.0"
+    message: str | None = None
+    secret: str | None = None
+
+
 def create_app(orc, now_fn=lambda: datetime.now(IST)) -> FastAPI:
     app = FastAPI(title="Raj Trading World", docs_url=None, redoc_url=None)
     st = orc.st
@@ -99,6 +111,34 @@ def create_app(orc, now_fn=lambda: datetime.now(IST)) -> FastAPI:
         now = now_fn()
         orc.refresh_all(now, "core")
         return orc.cycle(now, "core")
+
+    @app.post("/api/webhook/tradingview")
+    def tv_webhook(alert: TVAlertIn):
+        sym = alert.symbol.upper().replace("NSE:", "").replace("MCX:", "").replace("BINANCE:", "")
+        action = alert.action.upper()
+        if action not in ("BUY", "SELL"):
+            raise HTTPException(400, "action must be BUY or SELL")
+        now = now_fn()
+        txt = (
+            f"👺 <b>RAVAN 2.0 VIP ALERT RECEIVED!</b>\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"⚡ <b>Symbol:</b> {sym}\n"
+            f"🎯 <b>Action:</b> {action}\n"
+            f"💵 <b>Price:</b> {alert.price or '-'}\n"
+            f"🛑 <b>SL:</b> {alert.sl or '-'}\n"
+            f"🎯 <b>Target 1:</b> {alert.t1 or '-'}\n"
+            f"🎯 <b>Target 2:</b> {alert.t2 or '-'}\n"
+            f"📊 <b>Source:</b> {alert.indicator or 'TradingView RAVAN 2.0'}\n"
+            f"🕒 <b>Time:</b> {now.strftime('%d-%b-%Y %I:%M %p IST')}"
+        )
+        if alert.message:
+            txt += f"\n📝 <i>{alert.message}</i>"
+        try:
+            if orc.send:
+                orc.send(txt)
+        except Exception:
+            pass
+        return {"ok": True, "symbol": sym, "action": action, "broadcasted": True}
 
     @app.get("/")
     def index():

@@ -436,6 +436,126 @@ aside.scanner-box {
   display: block;
 }
 
+/* Ravan 2.0 Indicator HUD & Controls */
+.indicator-toggles {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.ind-btn {
+  background: var(--card-inner);
+  border: 1px solid var(--card-border);
+  color: var(--tx-muted);
+  border-radius: 6px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s;
+}
+.ind-btn:hover {
+  color: var(--tx);
+  border-color: rgba(255,255,255,0.2);
+}
+.ind-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--acc);
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+.ravan-hud-bar {
+  background: #090e1f;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.hud-title-box {
+  display: flex;
+  flex-direction: column;
+}
+.hud-tag {
+  font-size: 11px;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.hud-sub {
+  font-size: 9.5px;
+  color: var(--tx-muted);
+}
+.hud-chips-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+  justify-content: center;
+}
+.hud-chip {
+  background: var(--card-inner);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.hud-chip span { color: var(--tx-muted); font-size: 10px; font-weight: 600; }
+.hud-chip b.buy { color: var(--buy); }
+.hud-chip b.sell { color: var(--sell); }
+.hud-chip b.wait { color: var(--wait); }
+.hud-score-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.hud-score-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: var(--tx-muted);
+  text-transform: uppercase;
+}
+.hud-score-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 800;
+  color: #38bdf8;
+}
+.hud-score-val.buy { color: var(--buy); }
+.hud-score-val.sell { color: var(--sell); }
+
+/* Webhook Bridge Styles */
+.webhook-card {
+  background: var(--card);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.code-box {
+  background: #050811;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #38bdf8;
+  overflow-x: auto;
+  position: relative;
+  margin: 8px 0 14px;
+  word-break: break-all;
+}
+
 /* Signal Hero Box */
 .signal-box {
   background: var(--card);
@@ -609,6 +729,10 @@ aside.scanner-box {
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         P&L Journal
       </button>
+      <button class="nav-link" data-v="tvbridge">
+        <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        👺 Ravan 2.0 Webhook
+      </button>
       <button class="nav-link" data-v="settings">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Risk Settings
@@ -720,6 +844,14 @@ let activeChartTF = "5m";
 let scannerCategory = "all";
 let scannerFilterQuery = "";
 let masterWatchlist = [];
+let chartIndicators = {
+  ema: true,
+  vwap: true,
+  supertrend: true,
+  cpr: true,
+  zones: true
+};
+let lastChartData = null;
 
 function key() { try { return localStorage.getItem("rtw_key") || ""; } catch(e) { return ""; } }
 async function api(path, opt = {}) {
@@ -748,7 +880,7 @@ function showToast(title, body) {
 
 function copyTrade(txt) {
   navigator.clipboard.writeText(txt).then(() => {
-    showToast("✅ Signal Copied!", "Aap ab ise broker ya WhatsApp par paste kar sakte hain.");
+    showToast("✅ Copied to Clipboard!", "Aap ab ise broker ya WhatsApp par paste kar sakte hain.");
   }).catch(() => {
     alert("Copied:\n" + txt);
   });
@@ -759,8 +891,9 @@ setInterval(() => {
   $("#istTime").textContent = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Asia/Kolkata" });
 }, 1000);
 
-// Canvas Candlestick Chart Renderer with Grid & Indicators
+// Canvas Candlestick Chart Renderer with Multi-Factor Indicators (Ravan 2.0 Engine)
 function drawChart(cv, d) {
+  lastChartData = d;
   const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
   cv.width = W * dpr; cv.height = H * dpr;
   const g = cv.getContext("2d"); g.scale(dpr, dpr); g.clearRect(0, 0, W, H);
@@ -769,12 +902,21 @@ function drawChart(cv, d) {
     g.fillStyle = "#8f9bb8"; g.font = "14px 'Plus Jakarta Sans'"; g.fillText("Data loading / Market closed...", 20, 30);
     return;
   }
-  const PR = 68, PB = 24, pw = W - PR, ph = H - PB;
+  const PR = 72, PB = 24, pw = W - PR, ph = H - PB;
   let lo = Math.min(...cs.map(c => c.l)), hi = Math.max(...cs.map(c => c.h));
   (d.levels || []).forEach(l => { lo = Math.min(lo, l.price); hi = Math.max(hi, l.price); });
+
+  // Include CPR & PDH/PDL in scale if enabled
+  if (chartIndicators.cpr && d.cpr) {
+    [d.cpr.top_cpr, d.cpr.bot_cpr, d.cpr.pdh, d.cpr.pdl].forEach(p => {
+      if (p) { lo = Math.min(lo, p); hi = Math.max(hi, p); }
+    });
+  }
+
   const pad = (hi - lo) * 0.08 || 1; lo -= pad; hi += pad;
   const y = p => ph - (p - lo) / (hi - lo) * ph, step = pw / cs.length, bw = Math.max(1, step * 0.65);
 
+  // Background Grid Lines & Y-axis labels
   g.font = "11px 'JetBrains Mono'"; g.lineWidth = 1;
   for (let i = 0; i <= 5; i++) {
     const p = lo + (hi - lo) * i / 5, yy = y(p);
@@ -782,6 +924,54 @@ function drawChart(cv, d) {
     g.fillStyle = "#64748b"; g.fillText(fmt(p), pw + 6, yy + 4);
   }
 
+  // 1. Demand & Supply Zones
+  if (chartIndicators.zones) {
+    const sr = d.sr || {};
+    (sr.zones || []).forEach(z => {
+      const y1 = Math.max(0, Math.min(ph, y(z.hi))), y2 = Math.max(0, Math.min(ph, y(z.lo)));
+      if (y2 - y1 < 1) return;
+      g.fillStyle = z.kind === "demand" ? "rgba(16, 185, 129, 0.14)" : "rgba(244, 63, 94, 0.14)";
+      g.fillRect(0, y1, pw, y2 - y1);
+    });
+  }
+
+  // 2. CPR & PDH / PDL Plotting (Ravan 2.0 Core)
+  if (chartIndicators.cpr && d.cpr) {
+    const cpr = d.cpr;
+    // CPR Shaded Area between Top Central and Bottom Central
+    if (cpr.top_cpr && cpr.bot_cpr) {
+      const yt = Math.max(0, Math.min(ph, y(cpr.top_cpr)));
+      const yb = Math.max(0, Math.min(ph, y(cpr.bot_cpr)));
+      g.fillStyle = "rgba(56, 189, 248, 0.08)";
+      g.fillRect(0, Math.min(yt, yb), pw, Math.abs(yb - yt));
+
+      // Dotted lines for TC, Pivot, BC
+      [
+        { val: cpr.pivot, lbl: "CPR P", col: "#eab308" },
+        { val: cpr.tc, lbl: "TC", col: "#38bdf8" },
+        { val: cpr.bc, lbl: "BC", col: "#38bdf8" }
+      ].forEach(item => {
+        if (!item.val) return;
+        const yy = y(item.val);
+        g.strokeStyle = item.col; g.setLineDash([2, 4]); g.beginPath(); g.moveTo(0, yy); g.lineTo(pw, yy); g.stroke(); g.setLineDash([]);
+        g.fillStyle = item.col; g.font = "9px 'JetBrains Mono'"; g.fillText(`${item.lbl} ${fmt(item.val)}`, pw - 72, yy - 3);
+      });
+    }
+
+    // PDH / PDL Lines
+    if (cpr.pdh) {
+      const yy = y(cpr.pdh);
+      g.strokeStyle = "rgba(16, 185, 129, 0.7)"; g.setLineDash([4, 4]); g.beginPath(); g.moveTo(0, yy); g.lineTo(pw, yy); g.stroke(); g.setLineDash([]);
+      g.fillStyle = "#10b981"; g.font = "9px 'JetBrains Mono'"; g.fillText(`PDH ${fmt(cpr.pdh)}`, pw - 72, yy - 3);
+    }
+    if (cpr.pdl) {
+      const yy = y(cpr.pdl);
+      g.strokeStyle = "rgba(244, 63, 94, 0.7)"; g.setLineDash([4, 4]); g.beginPath(); g.moveTo(0, yy); g.lineTo(pw, yy); g.stroke(); g.setLineDash([]);
+      g.fillStyle = "#f43f5e"; g.font = "9px 'JetBrains Mono'"; g.fillText(`PDL ${fmt(cpr.pdl)}`, pw - 72, yy - 3);
+    }
+  }
+
+  // 3. Candlesticks (Green / Red bodies and wicks)
   cs.forEach((c, i) => {
     const x = i * step + step / 2, up = c.c >= c.o;
     g.strokeStyle = g.fillStyle = up ? "#10b981" : "#f43f5e";
@@ -790,24 +980,54 @@ function drawChart(cv, d) {
     g.fillRect(x - bw / 2, t, bw, Math.max(1, b - t));
   });
 
-  if (d.ema20) {
-    g.strokeStyle = "#38bdf8"; g.lineWidth = 1.5; g.beginPath(); let st = false;
-    d.ema20.forEach((e, i) => {
-      if (e == null) return;
+  // 4. VWAP Line (Orange dashed)
+  if (chartIndicators.vwap && d.vwap) {
+    g.strokeStyle = "#f97316"; g.lineWidth = 1.5; g.setLineDash([5, 3]); g.beginPath(); let st = false;
+    d.vwap.forEach((v, i) => {
+      if (v == null) return;
       const x = i * step + step / 2;
-      if (!st) { g.moveTo(x, y(e)); st = true; } else g.lineTo(x, y(e));
+      if (!st) { g.moveTo(x, y(v)); st = true; } else g.lineTo(x, y(v));
     });
-    g.stroke(); g.lineWidth = 1;
+    g.stroke(); g.setLineDash([]); g.lineWidth = 1;
+    const lv = d.vwap[d.vwap.length - 1];
+    if (lv) { g.fillStyle = "#f97316"; g.font = "9px 'JetBrains Mono'"; g.fillText(`VWAP ${fmt(lv)}`, 6, y(lv) - 3); }
   }
 
-  const sr = d.sr || {};
-  (sr.zones || []).forEach(z => {
-    const y1 = Math.max(0, Math.min(ph, y(z.hi))), y2 = Math.max(0, Math.min(ph, y(z.lo)));
-    if (y2 - y1 < 1) return;
-    g.fillStyle = z.kind === "demand" ? "rgba(16, 185, 129, 0.16)" : "rgba(244, 63, 94, 0.16)";
-    g.fillRect(0, y1, pw, y2 - y1);
-  });
+  // 5. 3 EMAs (EMA 20 Cyan, EMA 50 Gold, EMA 200 Purple)
+  if (chartIndicators.ema) {
+    const drawEma = (arr, col) => {
+      if (!arr || !arr.length) return;
+      g.strokeStyle = col; g.lineWidth = 1.5; g.beginPath(); let st = false;
+      arr.forEach((e, i) => {
+        if (e == null) return;
+        const x = i * step + step / 2;
+        if (!st) { g.moveTo(x, y(e)); st = true; } else g.lineTo(x, y(e));
+      });
+      g.stroke();
+    };
+    drawEma(d.ema20, "#38bdf8");
+    drawEma(d.ema50, "#facc15");
+    drawEma(d.ema200, "#a855f7");
+    g.lineWidth = 1;
+  }
 
+  // 6. Supertrend Line
+  if (chartIndicators.supertrend && d.supertrend_line) {
+    g.lineWidth = 2;
+    for (let i = 1; i < cs.length; i++) {
+      const v1 = d.supertrend_line[i - 1], v2 = d.supertrend_line[i];
+      if (v1 == null || v2 == null) continue;
+      const dir = d.supertrend_dir ? d.supertrend_dir[i] : 1;
+      g.strokeStyle = dir > 0 ? "#10b981" : "#f43f5e";
+      g.beginPath();
+      g.moveTo((i - 1) * step + step / 2, y(v1));
+      g.lineTo(i * step + step / 2, y(v2));
+      g.stroke();
+    }
+    g.lineWidth = 1;
+  }
+
+  // 7. Plan Levels (Entry, SL, Targets)
   const col = { entry: "#38bdf8", sl: "#f43f5e", target: "#10b981" };
   let lastLab = -99;
   [...(d.levels || [])].sort((a, b) => y(a.price) - y(b.price)).forEach(l => {
@@ -815,12 +1035,17 @@ function drawChart(cv, d) {
     g.strokeStyle = col[l.kind] || "#f59e0b"; g.setLineDash([5, 4]);
     g.beginPath(); g.moveTo(0, yy); g.lineTo(pw, yy); g.stroke(); g.setLineDash([]);
     const ly = Math.max(yy - 3, lastLab + 12); lastLab = ly;
-    g.fillStyle = col[l.kind] || "#f59e0b"; g.fillText((l.label ? l.label + " " : "") + fmt(l.price), 6, ly);
+    g.fillStyle = col[l.kind] || "#f59e0b"; g.font = "bold 11px 'JetBrains Mono'";
+    g.fillText((l.label ? l.label + " " : "") + fmt(l.price), 6, ly);
   });
 
+  // 8. Last Price Marker on Right Axis
   const last = cs[cs.length - 1];
+  const py = y(last.c);
+  g.fillStyle = last.c >= last.o ? "#10b981" : "#f43f5e";
+  g.fillRect(pw, py - 9, PR, 18);
   g.fillStyle = "#fff"; g.font = "bold 11px 'JetBrains Mono'";
-  g.fillText(fmt(last.c), pw + 6, y(last.c) + 4);
+  g.fillText(fmt(last.c), pw + 5, py + 4);
 }
 
 // ---------------- MASTER SCANNER (50 TO 100 ASSETS) ----------------
@@ -989,7 +1214,14 @@ async function loadActiveSymbol(sym) {
           <h2 id="centerChartName">${sym}</h2>
           <span class="chart-ltp-disp" id="centerChartPrice">-</span>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div class="indicator-toggles" id="indToggles">
+            <button class="ind-btn ${chartIndicators.ema ? 'active' : ''}" data-ind="ema">EMA 20/50/200</button>
+            <button class="ind-btn ${chartIndicators.vwap ? 'active' : ''}" data-ind="vwap">VWAP</button>
+            <button class="ind-btn ${chartIndicators.supertrend ? 'active' : ''}" data-ind="supertrend">Supertrend</button>
+            <button class="ind-btn ${chartIndicators.cpr ? 'active' : ''}" data-ind="cpr">CPR &amp; PDH/L</button>
+            <button class="ind-btn ${chartIndicators.zones ? 'active' : ''}" data-ind="zones">Zones</button>
+          </div>
           <div style="display:flex;gap:4px">
             ${["5m", "15m", "1h"].map(tf => `
               <button class="scanner-tab-btn ${tf === activeChartTF ? 'active' : ''}" data-ctf="${tf}">
@@ -1005,6 +1237,21 @@ async function loadActiveSymbol(sym) {
 
       <div class="chart-canvas-box">
         <canvas id="centerCanvas"></canvas>
+      </div>
+
+      <!-- RAVAN 2.0 Confluence Screener Ribbon -->
+      <div class="ravan-hud-bar" id="centerRavanHUD">
+        <div class="hud-title-box">
+          <span class="hud-tag">👺 RAVAN 2.0 MATRIX</span>
+          <span class="hud-sub">Multi-Factor Confluence</span>
+        </div>
+        <div class="hud-chips-box" id="hudChips">
+          <span style="font-size:11px;color:var(--tx-muted)">Calculating indicators...</span>
+        </div>
+        <div class="hud-score-box">
+          <span class="hud-score-label">ALIGNMENT</span>
+          <span class="hud-score-val" id="hudScoreVal">-</span>
+        </div>
       </div>
     </div>
 
@@ -1024,6 +1271,18 @@ async function loadActiveSymbol(sym) {
     };
   });
 
+  // Bind Indicator Toggle buttons
+  container.querySelectorAll(".ind-btn").forEach(b => {
+    b.onclick = () => {
+      const ind = b.dataset.ind;
+      chartIndicators[ind] = !chartIndicators[ind];
+      b.classList.toggle("active", chartIndicators[ind]);
+      if (lastChartData) {
+        drawChart($("#centerCanvas"), lastChartData);
+      }
+    };
+  });
+
   // Fetch Chart & Decision
   try {
     const [cd, sd] = await Promise.all([
@@ -1039,6 +1298,7 @@ async function loadActiveSymbol(sym) {
         $("#centerChartPrice").textContent = "₹" + fmt(cs[cs.length - 1].c);
       }
       drawChart($("#centerCanvas"), cd);
+      renderRavanHUD(cd.ravan_matrix);
     }
 
     if (sd.found && sd.decision) {
@@ -1056,6 +1316,30 @@ async function loadActiveSymbol(sym) {
     }
   } catch(e) {
     console.error("Error loading symbol data", e);
+  }
+}
+
+function renderRavanHUD(rm) {
+  if (!rm) return;
+  const chips = $("#hudChips");
+  if (chips) {
+    chips.innerHTML = (rm.factors || []).map(f => `
+      <div class="hud-chip">
+        <span>${esc(f.name)}:</span>
+        <b class="${esc(f.color)}">${esc(f.status)}</b>
+      </div>
+    `).join("") + (rm.cpr_type ? `
+      <div class="hud-chip" style="border-color:rgba(56,189,248,0.4)">
+        <span>CPR:</span>
+        <b style="color:var(--acc)">${esc(rm.cpr_type)}</b>
+      </div>
+    ` : "");
+  }
+
+  const scoreEl = $("#hudScoreVal");
+  if (scoreEl) {
+    scoreEl.textContent = `${rm.confidence || 50}% ${rm.bias || 'NEUTRAL'}`;
+    scoreEl.className = `hud-score-val ${rm.confidence >= 60 ? 'buy' : rm.confidence <= 40 ? 'sell' : ''}`;
   }
 }
 
@@ -1115,6 +1399,8 @@ async function switchView(v) {
 
   if (v === "signals" || v === "charts") {
     loadActiveSymbol(activeChartSymbol);
+  } else if (v === "tvbridge") {
+    renderTVBridgeView();
   } else if (v === "news") {
     renderNewsView();
   } else if (v === "record") {
@@ -1122,6 +1408,82 @@ async function switchView(v) {
   } else if (v === "settings") {
     renderSettingsView();
   }
+}
+
+function renderTVBridgeView() {
+  $("#viewTitle").textContent = "TradingView RAVAN 2.0 Screener & Webhook Bridge";
+  const origin = window.location.origin;
+  const webhookUrl = `${origin}/api/webhook/tradingview`;
+  const samplePayload = `{\n  "symbol": "{{ticker}}",\n  "action": "{{strategy.order.action}}",\n  "price": {{close}},\n  "sl": 22460,\n  "t1": 22600,\n  "t2": 22680,\n  "indicator": "RAVAN 2.0 SCREENER",\n  "message": "Ravan 2.0 Screener Buy Signal"\n}`;
+
+  $("#mainViewContainer").innerHTML = `
+    <div class="webhook-card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font-size:24px">👺</span>
+        <div>
+          <h2 style="margin:0;font-size:18px">RAVAN 2.0 Screener Webhook Bridge</h2>
+          <span style="font-size:11.5px;color:var(--tx-muted)">TradingView alerts direct Raj Trading World aur Telegram me receive honge</span>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <label style="font-size:11px;font-weight:700;color:var(--tx-muted);text-transform:uppercase">Webhook URL (TradingView me paste karein)</label>
+        <div class="code-box" id="tvUrlBox">${esc(webhookUrl)}</div>
+        <button class="copy-btn" data-copy="${esc(webhookUrl)}" style="margin-bottom:16px;background:#1e293b;border:1px solid rgba(56,189,248,0.4)">
+          📋 Copy Webhook URL
+        </button>
+      </div>
+
+      <div style="margin-top:12px">
+        <label style="font-size:11px;font-weight:700;color:var(--tx-muted);text-transform:uppercase">TradingView Alert Message JSON</label>
+        <div class="code-box" style="white-space:pre">${esc(samplePayload)}</div>
+        <button class="copy-btn" data-copy="${esc(samplePayload)}" style="background:#1e293b;border:1px solid rgba(56,189,248,0.4)">
+          📋 Copy Alert Message JSON
+        </button>
+      </div>
+
+      <div style="margin-top:20px;border-top:1px solid var(--line);padding-top:16px">
+        <h3 style="margin:0 0 10px;font-size:14px;color:var(--acc)">TradingView me Step-by-Step Setup Kaise Karein:</h3>
+        <ol style="margin:0;padding-left:18px;color:var(--tx-dim);line-height:1.7;font-size:12.5px">
+          <li>TradingView chart par apna <b>RAVAN 2.0 SCREENER</b> indicator lagayein.</li>
+          <li>Top bar me <b>Alert</b> icon (ya <code>Alt + A</code>) par click karein.</li>
+          <li>Condition me <b>RAVAN 2.0 SCREENER</b> select karein.</li>
+          <li><b>Notifications</b> tab me jayein aur <b>Webhook URL</b> checkbox tick karein.</li>
+          <li>Upar di gayi Webhook URL paste karein.</li>
+          <li><b>Settings</b> tab me <b>Message</b> box ke andar upar diya gaya JSON paste karein.</li>
+          <li><b>Create</b> par click karein. Jaise hi TradingView alert trigger hoga, aapke terminal aur Telegram par instant VIP Call notification aa jayega!</li>
+        </ol>
+
+        <button class="copy-btn" id="btnTestWebhook" style="margin-top:18px">
+          ⚡ Send Test Alert to Webhook Now
+        </button>
+        <div id="testMsg" style="margin-top:8px;font-weight:700"></div>
+      </div>
+    </div>
+  `;
+
+  $("#btnTestWebhook").onclick = async () => {
+    try {
+      const res = await api("/api/webhook/tradingview", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          symbol: "NIFTY",
+          action: "BUY",
+          price: 22520,
+          sl: 22460,
+          t1: 22600,
+          t2: 22680,
+          indicator: "RAVAN 2.0 SCREENER",
+          message: "Test webhook alert from RTW Terminal"
+        })
+      });
+      $("#testMsg").innerHTML = `<span style="color:var(--buy)">✅ Test Alert successfully delivered! Webhook live hai.</span>`;
+      showToast("👺 Test Alert Received", "RAVAN 2.0 VIP Alert broadcasted successfully.");
+    } catch(e) {
+      $("#testMsg").innerHTML = `<span style="color:var(--sell)">❌ Error: ${esc(e.message)}</span>`;
+    }
+  };
 }
 
 async function renderNewsView() {
