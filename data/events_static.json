@@ -1,0 +1,5 @@
+[
+  {"name": "RBI policy decision", "when": "2026-10-07T10:00:00+05:30", "impact": "HIGH", "assets": ["ALL"]},
+  {"name": "US CPI", "when": "2026-10-14T18:00:00+05:30", "impact": "HIGH", "assets": ["ALL"]},
+  {"name": "FOMC decision", "when": "2026-10-28T23:30:00+05:30", "impact": "HIGH", "assets": ["ALL"]}
+]

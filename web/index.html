@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<title>Raj Trading World</title>
+<style>
+:root{--bg:#0b1020;--card:#141b30;--card2:#1b2440;--tx:#e8ecf7;--mut:#8f9bb8;--buy:#22c55e;--sell:#ef4444;--wait:#f59e0b;--acc:#6aa7ff;--line:#26304f}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{padding:0 16px calc(76px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 6px}
+h1{font-size:17px;margin:0;letter-spacing:.3px}
+.badge{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--card2);color:var(--mut);border:1px solid var(--line)}
+.badge.paper{color:var(--wait);border-color:var(--wait)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+.big{font-size:26px;font-weight:700;margin:2px 0 4px}
+.buy{color:var(--buy)}.sell{color:var(--sell)}.wait{color:var(--wait)}.mut{color:var(--mut)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.kv{background:var(--card2);border-radius:12px;padding:10px 12px}.kv b{display:block;font-size:12px;color:var(--mut);font-weight:500}
+.kv span{font-size:17px;font-weight:600}
+ul{padding-left:18px;margin:8px 0}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0e1530;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;color:var(--mut);padding:12px 0;font-size:12px}
+nav button.on{color:var(--acc);font-weight:700}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0}
+.chip{white-space:nowrap;border:1px solid var(--line);background:var(--card);color:var(--mut);border-radius:99px;padding:6px 14px;font-size:13px}
+.chip.on{color:var(--tx);border-color:var(--acc)}
+input,select{width:100%;background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:16px}
+button.pri{background:var(--acc);color:#04122b;border:0;border-radius:12px;padding:12px 16px;font-weight:700;font-size:15px}
+.row{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+details summary{cursor:pointer;color:var(--mut);padding:6px 0}
+.warn{background:#3a2a0a;border:1px solid var(--wait);color:#ffd9a0;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:13px}
+.err{background:#3b1414;border:1px solid var(--sell);color:#ffc9c9;border-radius:12px;padding:10px 12px;margin:10px 0}
+svg{width:100%;height:90px}
+.chartbox{margin-top:12px}.chartbox canvas{width:100%;height:280px;display:block;background:var(--card2);border-radius:12px}
+.chartbox a{color:var(--acc);font-size:13px}
+.cbtn{margin:6px 6px 0 0}
+.mood{display:inline-block;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:700;border:1px solid var(--line)}
+.mood.BULLISH{color:var(--buy);border-color:var(--buy)}.mood.BEARISH{color:var(--sell);border-color:var(--sell)}.mood.SIDEWAYS{color:var(--wait);border-color:var(--wait)}
+#toast{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 10px);z-index:9;display:none;background:#10203f;border:1px solid var(--acc);border-radius:14px;padding:12px 14px;box-shadow:0 8px 30px #0008}
+#toast b{display:block;margin-bottom:2px}
+</style>
+</head>
+<body>
+<header><h1>Raj Trading World</h1><span id="mode" class="badge"></span></header>
+<div id="err"></div>
+<div id="toast" role="alert"></div>
+<main id="view"></main>
+<nav id="nav">
+  <button data-t="home" class="on">Home</button><button data-t="markets">Markets</button><button data-t="search">Search</button>
+  <button data-t="news">News</button><button data-t="record">Record</button><button data-t="settings">Settings</button>
+</nav>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=x=>{if(x==null)return"-";const a=Math.abs(x);return a>=1000?Math.round(x).toLocaleString("en-IN"):a>=10?x.toFixed(2):x.toFixed(4)};
+const hm=iso=>iso?new Date(iso).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:false,timeZone:"Asia/Kolkata"}):"-";
+let tab="home",mtab="index",timer=null;
+function key(){try{return localStorage.getItem("rtw_key")||""}catch(e){return""}}
+async function api(path,opt={}){
+  const sep=path.includes("?")?"&":"?";
+  const r=await fetch(path+(key()?sep+"key="+encodeURIComponent(key()):""),opt);
+  if(r.status===401){const k=prompt("Access key daalo");if(k){try{localStorage.setItem("rtw_key",k)}catch(e){}return api(path,opt)}throw new Error("access key chahiye")}
+  if(!r.ok){let m=r.statusText;try{m=(await r.json()).detail||m}catch(e){}throw new Error(m)}
+  return r.json();
+}
+
+/* ---------- market mood (bullish / bearish / sideways) ---------- */
+const moodBadge=m=>m&&m.mood?`<span class="mood ${m.mood}">${m.icon} ${esc(m.label)}</span>`:"";
+const rangeTxt=m=>m&&m.range?` · range ${fmt(m.range.lo)} – ${fmt(m.range.hi)}`:"";
+function moodStrip(d){
+  const it=(d.items||[]).filter(x=>x.headline);if(!it.length)return"";
+  return `<div class="card"><b>Market ka mahaul</b><span class="mut"> (sirf trend, signal nahi)</span>${it.map(x=>`<div class="row"><span>${esc(x.name)}</span><span>${x.mood?`<span class="mood ${x.mood}">${x.icon} ${esc(x.label)}</span>`:`<span class="mut">${esc(x.label)}</span>`}</span></div>${x.mood?`<div class="mut" style="font-size:12px;margin:-4px 0 6px">${esc(x.text)}${x.mood==="SIDEWAYS"?esc(rangeTxt(x)):""}</div>`:""}`).join("")}</div>`;
+}
+let toastT=null;
+function showToast(t,body){const e=$("#toast");e.innerHTML=`<b>${esc(t)}</b>${esc(body||"")}`;e.style.display="block";clearTimeout(toastT);toastT=setTimeout(()=>e.style.display="none",12000);e.onclick=()=>e.style.display="none"}
+async function pollMood(){
+  try{const d=await api("/api/mood");let seen=null;try{seen=localStorage.getItem("rtw_mood_seen")}catch(e){}
+    const fl=d.flips||[];const last=fl.length?fl[fl.length-1].ts:"";
+    if(seen===null){try{localStorage.setItem("rtw_mood_seen",last)}catch(e){}return}
+    const fresh=fl.filter(f=>f.ts>seen);
+    if(fresh.length){const nm=s=>(d.items.find(i=>i.symbol===s)||{}).name||s,L={BULLISH:"Tezi (Bullish)",BEARISH:"Mandi (Bearish)",SIDEWAYS:"Sideways"};
+      showToast("Market mood badla",fresh.map(f=>`${nm(f.symbol)}: ${L[f.from]} → ${L[f.to]}`).join(" | "));try{localStorage.setItem("rtw_mood_seen",last)}catch(e){}}
+  }catch(e){}
+}
+function srText(sr){if(!sr)return"";const p=[];
+  (sr.resistances||[]).slice(0,1).forEach(x=>p.push("Resistance "+fmt(x.price)+" ("+x.touches+" touch)"));
+  (sr.supports||[]).slice(0,1).forEach(x=>p.push("Support "+fmt(x.price)+" ("+x.touches+" touch)"));
+  (sr.zones||[]).forEach(z=>p.push((z.kind==="demand"?"Demand ":"Supply ")+fmt(z.lo)+"–"+fmt(z.hi)+(z.fresh?" (fresh)":"")));
+  return p.length?`<div class="mut" style="font-size:12px;margin:2px 0 6px">${p.map(esc).join(" · ")}</div>`:""}
+/* ---------- charts (own canvas, no external library) ---------- */
+function drawChart(cv,d){
+  const dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;
+  const g=cv.getContext("2d");g.scale(dpr,dpr);g.clearRect(0,0,W,H);
+  const cs=d.candles||[];if(!cs.length){g.fillStyle="#8f9bb8";g.fillText("Data nahi",10,20);return}
+  const PR=58,PB=18,pw=W-PR,ph=H-PB;
+  let lo=Math.min(...cs.map(c=>c.l)),hi=Math.max(...cs.map(c=>c.h));
+  (d.levels||[]).forEach(l=>{lo=Math.min(lo,l.price);hi=Math.max(hi,l.price)});
+  const pad=(hi-lo)*0.06||1;lo-=pad;hi+=pad;
+  const y=p=>ph-(p-lo)/(hi-lo)*ph,step=pw/cs.length,bw=Math.max(1,step*0.65);
+  g.font="10px system-ui";g.lineWidth=1;
+  for(let i=0;i<=4;i++){const p=lo+(hi-lo)*i/4,yy=y(p);g.strokeStyle="#26304f";g.beginPath();g.moveTo(0,yy);g.lineTo(pw,yy);g.stroke();g.fillStyle="#8f9bb8";g.fillText(fmt(p),pw+4,yy+3)}
+  cs.forEach((c,i)=>{const x=i*step+step/2,up=c.c>=c.o;g.strokeStyle=g.fillStyle=up?"#22c55e":"#ef4444";
+    g.beginPath();g.moveTo(x,y(c.h));g.lineTo(x,y(c.l));g.stroke();const t=y(Math.max(c.o,c.c)),b=y(Math.min(c.o,c.c));g.fillRect(x-bw/2,t,bw,Math.max(1,b-t))});
+  if(d.ema20){g.strokeStyle="#6aa7ff";g.lineWidth=1.2;g.beginPath();let st=false;d.ema20.forEach((e,i)=>{if(e==null)return;const x=i*step+step/2;if(!st){g.moveTo(x,y(e));st=true}else g.lineTo(x,y(e))});g.stroke();g.lineWidth=1}
+  const sr=d.sr||{};
+  (sr.zones||[]).forEach(z=>{const y1=Math.max(0,Math.min(ph,y(z.hi))),y2=Math.max(0,Math.min(ph,y(z.lo)));if(y2-y1<1)return;
+    g.fillStyle=z.kind==="demand"?"rgba(34,197,94,.16)":"rgba(239,68,68,.16)";g.fillRect(0,y1,pw,y2-y1);
+    g.fillStyle=z.kind==="demand"?"#22c55e":"#ef4444";g.fillText(z.kind==="demand"?"Demand":"Supply",pw-44,Math.min(ph-2,y1+10))});
+  [...(sr.supports||[]).map(x=>["S",x]),...(sr.resistances||[]).map(x=>["R",x])].forEach(([k,x])=>{const yy=y(x.price);if(yy<0||yy>ph)return;g.strokeStyle="#8f9bb8";g.setLineDash([2,3]);g.beginPath();g.moveTo(0,yy);g.lineTo(pw,yy);g.stroke();g.setLineDash([]);g.fillStyle="#8f9bb8";g.fillText(k+" "+fmt(x.price),pw-70,yy-2)});
+  const col={entry:"#6aa7ff",sl:"#ef4444",target:"#22c55e"};
+  let lastLab=-99;
+  [...(d.levels||[])].sort((a,b)=>y(a.price)-y(b.price)).forEach(l=>{const yy=y(l.price);g.strokeStyle=col[l.kind]||"#f59e0b";g.setLineDash([5,4]);g.beginPath();g.moveTo(0,yy);g.lineTo(pw,yy);g.stroke();g.setLineDash([]);
+    const ly=Math.max(yy-3,lastLab+11);lastLab=ly;g.fillStyle=col[l.kind]||"#f59e0b";g.fillText((l.label?l.label+" ":"")+fmt(l.price),4,ly)});
+  const last=cs[cs.length-1];g.fillStyle="#e8ecf7";g.fillText(fmt(last.c),pw+4,y(last.c)+3);
+  const ft=t=>new Date(t*1000).toISOString().slice(11,16);g.fillStyle="#8f9bb8";
+  [0,Math.floor(cs.length/2),cs.length-1].forEach(i=>g.fillText(ft(cs[i].t),Math.min(i*step,pw-30),H-4));
+}
+async function loadChart(box,sym,tf,opt){
+  box.dataset.sym=sym;box.dataset.tf=tf;box.dataset.opt=opt?JSON.stringify(opt):"";
+  box.innerHTML=`<div class="mut">Chart la raha hu...</div>`;
+  let q="/api/chart?q="+encodeURIComponent(sym)+"&tf="+tf;if(opt)q+=`&strike=${opt.strike}&cp=${opt.cp}&expiry=${encodeURIComponent(opt.expiry)}`;
+  try{const d=await api(q);
+    if(!d.found){box.innerHTML=`<div class="warn">${esc(d.message||"Chart nahi mila")}</div>`;return}
+    box.innerHTML=`<div class="chips">${["5m","15m","1h"].map(t=>`<button class="chip ${t===tf?'on':''}" data-tf="${t}">${t}</button>`).join("")}</div>
+      <div style="margin:6px 0">${moodBadge(d.mood)}<span class="mut">${d.mood?" "+esc(d.mood.text)+esc(rangeTxt(d.mood)):""}</span></div><div class="mut" style="margin:4px 0">${esc(d.name)} · EMA20 (neeli line) · rangeen dotted = Entry/SL/Target · S/R = support/resistance · hara/laal patta = Demand/Supply zone</div>${srText(d.sr)}<canvas></canvas>
+      <div style="margin-top:6px"><a href="${esc(d.tv_url)}" target="_blank" rel="noopener">TradingView me kholo ↗</a></div>`;
+    drawChart(box.querySelector("canvas"),d);
+  }catch(e){box.innerHTML=`<div class="err">${esc(e.message)}</div>`}
+}
+function chartBoxHTML(){return `<div class="chartbox open"></div>`}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-chart],[data-ochart],[data-tf]");if(!b)return;
+  if(b.dataset.tf){const box=b.closest(".chartbox");loadChart(box,box.dataset.sym,b.dataset.tf,box.dataset.opt?JSON.parse(box.dataset.opt):null);return}
+  const card=b.closest(".card"),host=card||b.closest(".row")||b.parentElement;
+  let box=card?card.querySelector(".chartbox"):(host.nextElementSibling&&host.nextElementSibling.classList.contains("chartbox")?host.nextElementSibling:null);
+  const opt=b.dataset.ochart?JSON.parse(b.dataset.ochart):null,sym=b.dataset.chart||b.dataset.sym;
+  if(box&&box.dataset.sym===sym&&(box.dataset.opt||"")===(opt?JSON.stringify(opt):"")){box.remove();return}
+  if(box)box.remove();box=document.createElement("div");box.className="chartbox open";if(card)card.appendChild(box);else host.after(box);loadChart(box,sym,"5m",opt);
+});
+function tradeCard(t){
+  const c=t.direction==="BUY"?"buy":"sell";
+  const o=t.option;
+  let h=`<div class="card"><span class="badge ${t.paper?'paper':''}">${t.paper?'PAPER (record ban raha hai)':'LIVE-READY'}</span> <span class="badge">Grade ${esc(t.grade)} · ${t.confidence}%</span>
+  <div class="big ${c}">${esc(t.label)}</div><div class="big ${c}" style="font-size:18px">${esc(t.action)}</div>
+  <p>${esc(t.status_text)}</p>
+  <div class="grid">
+   <div class="kv"><b>Entry zone (underlying)</b><span>${fmt(t.entry_lo)} – ${fmt(t.entry_hi)}</span></div>
+   <div class="kv"><b>Stoploss</b><span>${fmt(t.sl)}</span></div>
+   <div class="kv"><b>Target 1</b><span>${fmt(t.t1)}</span></div>
+   <div class="kv"><b>Target 2</b><span>${fmt(t.t2)}</span></div>
+   <div class="kv"><b>Valid till</b><span>${hm(t.valid_till)}</span></div>
+   <div class="kv"><b>Hold till (nikalna)</b><span>${hm(t.exit_by)}</span></div>
+  </div>`;
+  if(o) h+=`<div class="grid"><div class="kv"><b>Option premium (approx)</b><span>₹${fmt(o.premium)}</span></div><div class="kv"><b>Premium SL</b><span>₹${fmt(o.sl_premium)}</span></div>
+   <div class="kv"><b>Premium T1</b><span>₹${fmt(o.t1_premium)}</span></div><div class="kv"><b>Expiry</b><span>${esc(o.expiry)}</span></div></div>`;
+  if(t.lots!=null) h+=`<p class="mut">Lots: <b>${t.lots}</b>${t.max_loss?` · Max nuksan (poora premium): ₹${fmt(t.max_loss)}`:(t.risk_amount?` · SL pe risk: ${fmt(t.risk_amount)}`:"")}</p>`;
+  if(t.live&&t.live.price!=null) h+=`<p>Abhi price: <b>${fmt(t.live.price)}</b>${t.live.r!=null?` · <b class="${t.live.r>=0?'buy':'sell'}">${t.live.r.toFixed(2)}R</b>`:""}</p>`;
+  if(t.state==="NEW") h+=`<div class="warn">Chase mat karo: ${fmt(t.chase_price)} ke aage price chala jaye to ye trade MISSED hai.</div>`;
+  if(t.plan_note) h+=`<div class="warn">${esc(t.plan_note)}</div>`;
+  h+=`<div><button class="chip cbtn" data-chart="${esc(t.symbol)}" data-sym="${esc(t.symbol)}">📈 Chart</button>${o?`<button class="chip cbtn" data-sym="${esc(t.symbol)}" data-chart="${esc(t.symbol)}" data-ochart='${esc(JSON.stringify({strike:o.strike,cp:o.cp,expiry:o.expiry}))}'>📈 Option chart</button>`:""}</div>`;
+  if(t.reasons&&t.reasons.length) h+=`<b>Kyu:</b><ul>${t.reasons.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>`;
+  return h+`</div>`;
+}
+async function home(){
+  const d=await api("/api/home");$("#mode").textContent=d.mode;
+  let h="";
+  try{h+=moodStrip(await api("/api/mood"))}catch(e){}
+  if(d.trades&&d.trades.length) h+=d.trades.map(tradeCard).join("");
+  else if(d.trade) h+=tradeCard(d.trade);
+  else{const w=d.wait||{};h+=`<div class="card"><div class="big wait">WAIT</div><p>${esc(w.reason)}</p>${w.next_event?`<p class="mut">Agla bada event: <b>${esc(w.next_event.name)}</b> ${esc(w.next_event.when_text)}</p>`:""}</div>`}
+  if(d.info&&d.info.length) h+=`<div class="card"><b>Dusre signals (sirf INFO)</b>${d.info.map(i=>`<div class="row"><span>${esc(i.symbol)} <b class="${i.action==='BUY'?'buy':'sell'}">${esc(i.action)}</b></span><span class="mut">${esc(i.grade)} · ${i.confidence}%</span></div>`).join("")}</div>`;
+  if(d.last_closed){const l=d.last_closed;h+=`<div class="card"><b>Pichla trade</b><div class="row"><span>${esc(l.label)} ${esc(l.action)}</span><span class="${(l.r_multiple||0)>=0?'buy':'sell'}">${l.r_multiple!=null?l.r_multiple.toFixed(2)+'R':esc(l.state)}</span></div><div class="mut">${esc(l.close_reason)}</div></div>`}
+  $("#view").innerHTML=h;
+}
+async function markets(){
+  const d=await api("/api/markets/"+mtab);
+  const tabs=["index","commodity","stocks","forex","crypto"];
+  let h=`<div class="chips">${tabs.map(t=>`<button class="chip ${t===mtab?'on':''}" data-m="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join("")}</div>`;
+  const row=r=>`<div class="card"><div class="row" style="border:0;padding:0"><b>${esc(r.name||r.symbol)}</b><b class="${r.action==='BUY'?'buy':r.action==='SELL'?'sell':'wait'}">${esc(r.action)}</b></div>
+   <div>${moodBadge(r.mood)}</div><div class="mut">${r.price!=null?fmt(r.price):""} ${r.regime?"· "+esc(r.regime):""} ${r.grade?"· Grade "+esc(r.grade)+" · "+r.confidence+"%":""}</div>
+   ${r.plan&&r.action!=="WAIT"?`<div>Entry ${fmt(r.plan.entry_lo)}–${fmt(r.plan.entry_hi)} · SL ${fmt(r.plan.sl)} · T1 ${fmt(r.plan.t1)}</div>`:""}
+   ${(r.reasons||[]).length?`<div class="mut">${r.reasons.map(esc).join(" · ")}</div>`:""}
+   ${r.action==="WAIT"&&r.wait_reason?`<div class="mut">${esc(r.wait_reason)}</div>`:""}<div><button class="chip cbtn" data-chart="${esc(r.symbol)}" data-sym="${esc(r.symbol)}">📈 Chart</button></div></div>`;
+  h+=d.active.length?d.active.map(row).join(""):`<div class="card mut">Is tab me abhi koi BUY/SELL signal nahi.</div>`;
+  if(mtab==="stocks") h+=`<details><summary>${d.wait_count} stocks WAIT me hain</summary>${(d.waiting||[]).map(w=>`<div class="row"><span>${esc(w.symbol)} ${moodBadge(w.mood)}</span><button class="chip cbtn" data-chart="${esc(w.symbol)}" data-sym="${esc(w.symbol)}">📈</button></div>`).join("")}</details>`;
+  else if(d.waiting.length) h+=`<details><summary>${d.waiting.length} WAIT me</summary>${d.waiting.map(row).join("")}</details>`;
+  $("#view").innerHTML=h;
+  document.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{mtab=b.dataset.m;render()});
+}
+function search(){
+  $("#view").innerHTML=`<div class="card"><input id="q" placeholder="Stock / pair / BTC likho (jaise RELIANCE, EURUSD)" autocomplete="off"><div style="height:10px"></div><button class="pri" id="go">Signal dekho</button> <button class="chip" id="cg">📈 Sirf chart</button></div><div id="res"></div>`;
+  const go=async()=>{const q=$("#q").value.trim();if(!q)return;$("#res").innerHTML=`<div class="card mut">Dekh raha hu...</div>`;
+    try{const r=await api("/api/search?q="+encodeURIComponent(q));
+      if(!r.found){$("#res").innerHTML=`<div class="card">${esc(r.message)}</div>`;return}
+      const d=r.decision,c=d.action==="BUY"?"buy":d.action==="SELL"?"sell":"wait";
+      $("#res").innerHTML=`<div class="card"><div class="big ${c}">${esc(r.name)} — ${esc(d.action)}</div><div class="mut">${esc(d.note||"")}</div>
+       ${d.plan&&d.action!=="WAIT"?`<div class="grid"><div class="kv"><b>Entry</b><span>${fmt(d.plan.entry_lo)}–${fmt(d.plan.entry_hi)}</span></div><div class="kv"><b>SL</b><span>${fmt(d.plan.sl)}</span></div><div class="kv"><b>T1</b><span>${fmt(d.plan.t1)}</span></div><div class="kv"><b>T2</b><span>${fmt(d.plan.t2)}</span></div></div>`:`<p>${esc(d.wait_reason||"")}</p>`}
+       ${(d.reasons||[]).length?`<ul>${d.reasons.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}<div><button class="chip cbtn" data-chart="${esc(r.symbol)}" data-sym="${esc(r.symbol)}">📈 Chart</button></div></div>`;
+      const cb=$("#res [data-chart]");if(cb)cb.click();
+    }catch(e){$("#res").innerHTML=`<div class="err">${esc(e.message)}</div>`}};
+  $("#cg").onclick=()=>{const q=$("#q").value.trim();if(!q)return;$("#res").innerHTML=`<div class="card"><button class="chip cbtn" data-chart="${esc(q)}" data-sym="${esc(q)}">📈 Chart</button></div>`;$("#res [data-chart]").click()};
+  $("#go").onclick=go;$("#q").onkeydown=e=>{if(e.key==="Enter")go()};
+}
+async function news(){
+  const d=await api("/api/news");
+  let h=`<div class="card"><b>News mode:</b> <span class="${d.mode==='CALM'?'buy':'wait'}">${esc(d.mode)}</span>${d.reason?`<p>${esc(d.reason)}</p>`:""}${d.vix_z!=null?`<p class="mut">VIX z-score: ${d.vix_z.toFixed(1)}</p>`:""}</div>`;
+  h+=`<div class="card"><b>Aane wale events (IST)</b>${(d.events||[]).map(e=>`<div class="row"><span>${esc(e.name)}</span><span class="${e.impact==='HIGH'?'wait':'mut'}">${esc(e.when_text)}</span></div>`).join("")||'<p class="mut">Koi event nahi</p>'}</div>`;
+  h+=`<div class="card"><b>Taaza headlines</b>${(d.headlines||[]).map(x=>`<div class="row"><span>${esc(x.title)}</span><span class="mut">${esc((x.tags||[]).join(" "))}</span></div>`).join("")||'<p class="mut">Abhi koi headline nahi</p>'}</div>`;
+  $("#view").innerHTML=h;
+}
+async function record(){
+  const d=await api("/api/record"),a=d.all;
+  let pts="";if(d.equity.length>1){const ys=d.equity.map(e=>e.cum_r),mn=Math.min(0,...ys),mx=Math.max(0.1,...ys);
+    pts=d.equity.map((e,i)=>`${(i/(d.equity.length-1))*300},${88-((e.cum_r-mn)/(mx-mn))*80}`).join(" ")}
+  let h=`<div class="card"><div class="grid"><div class="kv"><b>Trades</b><span>${a.trades}</span></div><div class="kv"><b>Win rate</b><span>${(a.win_rate*100).toFixed(0)}%</span></div>
+   <div class="kv"><b>Total R</b><span>${a.total_r.toFixed(2)}</span></div><div class="kv"><b>Avg R</b><span>${a.avg_r.toFixed(2)}</span></div></div>
+   ${pts?`<svg viewBox="0 0 300 90" preserveAspectRatio="none"><polyline fill="none" stroke="#6aa7ff" stroke-width="2" points="${pts}"/></svg>`:'<p class="mut">Curve ke liye kam se kam 2 trade chahiye.</p>'}</div>`;
+  h+=`<div class="card"><b>Pichle trades</b>${d.last.map(l=>`<div class="row"><span>${esc(l.symbol)} ${esc(l.direction)} ${l.paper?'<span class="badge paper">PAPER</span>':''}</span><span class="${(l.r||0)>=0?'buy':'sell'}">${l.r!=null?l.r.toFixed(2)+'R':esc(l.state)}</span></div>`).join("")||'<p class="mut">Abhi koi trade nahi</p>'}</div>`;
+  $("#view").innerHTML=h;
+}
+async function settings(){
+  const s=await api("/api/settings");
+  $("#view").innerHTML=`<div class="card"><b>Capital (₹)</b><input id="cap" type="number" value="${s.capital}"><div style="height:10px"></div>
+   <b>Risk per trade (%)</b><input id="rp" type="number" step="0.1" value="${(s.risk_pct*100).toFixed(1)}"><div style="height:10px"></div>
+   <b>Ek saath kitne signals (1 = sirf ek)</b><select id="mt">${[1,2,3,4,5].map(n=>`<option ${n===s.max_trades?"selected":""}>${n}</option>`).join("")}</select><div style="height:10px"></div>
+   <b>Profile</b><select id="pf">${["conservative","moderate","aggressive"].map(p=>`<option ${p===s.profile?"selected":""}>${p}</option>`).join("")}</select><div style="height:14px"></div>
+   <button class="pri" id="sv">Save</button><p id="msg" class="mut"></p></div>`;
+  $("#sv").onclick=async()=>{try{await api("/api/settings",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({capital:+$("#cap").value,risk_pct:+$("#rp").value/100,profile:$("#pf").value,max_trades:+$("#mt").value})});$("#msg").textContent="Save ho gaya"}catch(e){$("#msg").textContent=e.message}};
+}
+const views={home,markets,search,news,record,settings};
+async function render(){
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));
+  $("#err").innerHTML="";
+  try{await views[tab]()}catch(e){$("#err").innerHTML=`<div class="err">${esc(e.message)}</div>`}
+}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()});
+pollMood();setInterval(()=>{if(document.visibilityState==="visible")pollMood()},30000);
+render();timer=setInterval(()=>{if(["home","markets","news"].includes(tab)&&document.visibilityState==="visible"&&!document.querySelector(".chartbox"))render()},30000);
+if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});
+</script>
+</body>
+</html>
