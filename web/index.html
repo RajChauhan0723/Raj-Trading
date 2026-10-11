@@ -1257,40 +1257,50 @@ async function loadActiveSymbol(sym) {
     };
   });
 
-  // Fetch Chart & Decision
-  try {
-    const [cd, sd] = await Promise.all([
-      api(`/api/chart?q=${encodeURIComponent(sym)}&tf=${activeChartTF}`).catch(() => ({ found: false })),
-      api(`/api/search?q=${encodeURIComponent(sym)}`).catch(() => ({ found: false }))
-    ]);
-
-    if (cd.found) {
-      $("#centerChartName").textContent = cd.name || sym;
-      $("#centerTVLink").href = cd.tv_url || `https://www.tradingview.com/chart/?symbol=${sym}`;
-      const cs = cd.candles || [];
-      if (cs.length) {
-        $("#centerChartPrice").textContent = "₹" + fmt(cs[cs.length - 1].c);
+  // Non-blocking concurrent fetch: Chart renders first, then Signal Decision
+  api(`/api/chart?q=${encodeURIComponent(sym)}&tf=${activeChartTF}`)
+    .then(cd => {
+      if (cd && cd.found) {
+        $("#centerChartName").textContent = cd.name || sym;
+        $("#centerTVLink").href = cd.tv_url || `https://www.tradingview.com/chart/?symbol=${sym}`;
+        const cs = cd.candles || [];
+        if (cs.length) {
+          $("#centerChartPrice").textContent = "₹" + fmt(cs[cs.length - 1].c);
+        }
+        drawChart($("#centerCanvas"), cd);
+        renderConfluenceRadar(cd.confluence_radar || cd.ravan_matrix);
       }
-      drawChart($("#centerCanvas"), cd);
-      renderConfluenceRadar(cd.confluence_radar || cd.ravan_matrix);
-    }
+    })
+    .catch(e => console.error("Chart load err", e));
 
-    if (sd.found && sd.decision) {
-      renderSymbolDecision(sd.decision, sd.name, sym);
-    } else {
-      $("#symbolDecisionArea").innerHTML = `
-        <div class="signal-box is-wait">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <h3 style="margin:0">${sym} Status</h3>
-            <span class="sig-action-pill pill-wait">🟡 WAIT</span>
-          </div>
-          <p style="margin:8px 0 0;color:var(--tx-dim)">Abhi is symbol par koi confirmed trigger nahi hai. Setup complete hone par notification aayega.</p>
-        </div>
-      `;
-    }
-  } catch(e) {
-    console.error("Error loading symbol data", e);
-  }
+  api(`/api/search?q=${encodeURIComponent(sym)}`)
+    .then(sd => {
+      if (sd && sd.found && sd.decision) {
+        renderSymbolDecision(sd.decision, sd.name, sym);
+      } else {
+        renderDefaultWaitNotice(sym);
+      }
+    })
+    .catch(e => {
+      console.error("Decision load err", e);
+      renderDefaultWaitNotice(sym);
+    });
+}
+
+function renderDefaultWaitNotice(sym) {
+  const el = $("#symbolDecisionArea");
+  if (!el) return;
+  el.innerHTML = `
+    <div class="signal-box is-wait">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h3 style="margin:0;font-size:18px">${esc(sym)}</h3>
+        <span class="sig-action-pill pill-wait">🟡 STANDBY</span>
+      </div>
+      <p style="color:var(--tx-dim);font-size:13px;margin:0">
+        Data refreshed. Market open hone par ya entry pattern form hone par live BUY/SELL signal generate hoga.
+      </p>
+    </div>
+  `;
 }
 
 function renderConfluenceRadar(rm) {
@@ -1334,7 +1344,7 @@ function renderSymbolDecision(d, name, sym) {
           <h3 style="margin:2px 0 0;font-size:22px">${esc(name || sym)}</h3>
         </div>
         <div class="sig-action-pill ${pillClass}">
-          ${isBuy ? '▲ BUY SIGNAL' : isSell ? '▼ SELL SIGNAL' : '🟡 NO ACTIVE SIGNAL'}
+          ${isBuy ? '▲ BUY SIGNAL' : isSell ? '▼ SELL SIGNAL' : '🟡 NO ACTIVE SIGNAL (WAIT)'}
         </div>
       </div>
 
@@ -1348,15 +1358,28 @@ function renderSymbolDecision(d, name, sym) {
 
         <button class="copy-btn" data-copy="${esc(copyTxt)}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          Copy Signal for Broker / WhatsApp
+          📋 Copy Signal for Broker / WhatsApp
         </button>
       ` : `
-        <p style="color:var(--tx-dim);font-size:14px;margin:8px 0">${esc(d.wait_reason || d.note || "Is symbol par abhi koi active trade call nahi hai.")}</p>
+        <div style="background:rgba(255,255,255,0.02);border:1px dashed var(--line);border-radius:10px;padding:14px;margin:10px 0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:16px">🛡️</span>
+            <b style="color:var(--tx);font-size:14px">Institutional Risk Filter: Standby Mode</b>
+          </div>
+          <p style="color:var(--tx-dim);font-size:13px;margin:0 0 12px;line-height:1.5">
+            ${esc(d.wait_reason || d.note || "Is symbol par abhi koi active trade setup nahi hai. Market chop ya closed session me false signals suppress kiye gaye hain.")}
+          </p>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--tx-muted)">
+            <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">⏰ NSE/BSE: Mon-Fri 9:15 AM - 3:30 PM IST</span>
+            <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">⚡ 24/7 Live: Bitcoin (BTC)</span>
+            <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">🎯 Signal aate hi isi box me Entry, SL & Targets live dikhenge</span>
+          </div>
+        </div>
       `}
 
       ${d.reasons && d.reasons.length ? `
         <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px;font-size:12.5px;color:var(--tx-dim)">
-          <b style="color:var(--tx)">Technical Logic:</b>
+          <b style="color:var(--tx)">Technical Logic & Confirmation:</b>
           <div style="margin-top:4px">${d.reasons.map(r => `<div>• ${esc(r)}</div>`).join("")}</div>
         </div>
       ` : ''}

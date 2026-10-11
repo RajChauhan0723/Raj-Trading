@@ -141,7 +141,8 @@ class Orchestrator:
         if sm is not None and sm.conf > 0:
             extra["smart"] = sm
         chain = None
-        if spec.has_options:
+        from .sessions import is_open
+        if spec.has_options and (self.demo or is_open(spec.segment, now, self.provider.holidays())):
             chain = self.provider.option_chain(spec, now)
             if chain:
                 extra["options"] = options_layer(chain.get("spot") or float(df["close"].iloc[-1]), chain["rows"], chain.get("iv_pct"))
@@ -431,8 +432,21 @@ class Orchestrator:
         sp = self.resolve(q, now)
         if sp is None:
             return {"found": False, "message": "Symbol samajh nahi aaya"}
-        if not self.refresh_symbol(sp, now):
-            return {"found": False, "symbol": sp.symbol, "message": f"{sp.symbol} ka data nahi mila"}
+        from .sessions import is_open
+        mkt_open = self.demo or is_open(sp.segment, now, self.provider.holidays())
+        cached = load_decisions(self.con).get(sp.symbol)
+        if cached and not mkt_open:
+            cached = dict(cached)
+            cached["info_only"] = True
+            cached["note"] = "Market abhi closed hai. Yeh last session ka calculated setup hai."
+            return {"found": True, "symbol": sp.symbol, "name": sp.name, "decision": cached}
+        df = load_df(self.con, sp.symbol, "5m", 60)
+        has_data = df is not None and len(df) >= 30
+        if not has_data or mkt_open:
+            # If market is open or we don't have local data, refresh
+            if not has_data:
+                if not self.refresh_symbol(sp, now):
+                    return {"found": False, "symbol": sp.symbol, "message": f"{sp.symbol} ka data nahi mila"}
         d = self.analyze_spec(sp, now, self.context(now), get_setup_stats(self.con), load_protections(self.con))
         d["info_only"] = True
         d["note"] = "Search result: sirf jaankari. Home ke trades alag se chalte hain."
