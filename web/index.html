@@ -1251,7 +1251,11 @@ function renderScannerList() {
 }
 
 // ---------------- LOAD SELECTED SYMBOL IN CENTER STAGE ----------------
+let currentLoadId = 0;
+
 async function loadActiveSymbol(sym) {
+  const thisLoadId = ++currentLoadId;
+  activeChartSymbol = sym;
   // Update Center Top Title
   $("#viewTitle").textContent = `${sym} — Interactive Pro Chart & Signals`;
 
@@ -1387,6 +1391,7 @@ async function loadActiveSymbol(sym) {
   // Non-blocking concurrent fetch: Chart renders first, then Signal Decision
   api(`/api/chart?q=${encodeURIComponent(sym)}&tf=${activeChartTF}`)
     .then(cd => {
+      if (thisLoadId !== currentLoadId) return;
       if (cd && cd.found) {
         $("#centerChartName").textContent = cd.name || sym;
         $("#centerTVLink").href = cd.tv_url || `https://www.tradingview.com/chart/?symbol=${sym}`;
@@ -1404,6 +1409,7 @@ async function loadActiveSymbol(sym) {
 
   api(`/api/search?q=${encodeURIComponent(sym)}`)
     .then(sd => {
+      if (thisLoadId !== currentLoadId) return;
       if (sd && sd.found && sd.decision) {
         renderSymbolDecision(sd.decision, sd.name, sym);
       } else {
@@ -1457,6 +1463,9 @@ function renderConfluenceRadar(rm) {
 }
 
 function renderSymbolDecision(d, name, sym) {
+  if (sym && activeChartSymbol && sym !== activeChartSymbol && sym !== "BTCUSDT" && activeChartSymbol !== "BTCUSDT") return;
+  const isCrypto = (sym || "").toUpperCase().includes("BTC") || (d && d.asset_class === "CRYPTO");
+  const isMCX = ["GOLD", "SILVER", "CRUDEOIL", "NATURALGAS"].some(x => (sym || "").toUpperCase().includes(x));
   const isBuy = d.action === "BUY";
   const isSell = d.action === "SELL";
   const boxClass = isBuy ? "is-buy" : isSell ? "is-sell" : "is-wait";
@@ -1526,15 +1535,25 @@ function renderSymbolDecision(d, name, sym) {
             ${esc(d.wait_reason || d.note || "Is symbol par abhi koi active trade setup nahi hai. Market chop ya closed session me false signals suppress kiye gaye hain.")}
           </p>
           <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--tx-muted)">
-            <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">⏰ NSE/BSE: Mon-Fri 9:15 AM - 3:30 PM IST</span>
-            <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">⚡ 24/7 Live: Bitcoin (BTC)</span>
-            <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">🎯 Signal aate hi isi box me Entry, SL & Targets live dikhenge</span>
+            ${isCrypto ? `
+              <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">⚡ Crypto Market: 24/7 Live (Binance Stream)</span>
+              <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">🛡️ Anti-Trap Guard: Min 1:2.0 R:R Filter Active</span>
+              <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">🎯 Setup confirm hone par yahan Entry, SL aur Target generate honge</span>
+            ` : isMCX ? `
+              <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">⏰ MCX Market: Mon-Fri 9:00 AM - 11:30 PM IST</span>
+              <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">🎯 Commodity triggers me Entry, SL & Targets live dikhenge</span>
+            ` : `
+              <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">⏰ NSE/BSE: Mon-Fri 9:15 AM - 3:30 PM IST</span>
+              <span style="background:var(--bg-card);padding:4px 8px;border-radius:6px;border:1px solid var(--line)">🎯 Signal aate hi isi box me Entry, SL & Targets live dikhenge</span>
+            `}
           </div>
 
-          <!-- OPTION CHAIN STRATEGY INTEL -->
-          <div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--acc)">
-            <span>📊 <b>F&O Option Strategy:</b> Nifty/Stock setup confirm hote hi AI At-The-Money (ATM) <b>CE (Call)</b> ya <b>PE (Put)</b> ka exact <b>Option Premium Entry, SL & Target</b> yahan display karega.</span>
-          </div>
+          ${!isCrypto && !isMCX ? `
+            <!-- OPTION CHAIN STRATEGY INTEL -->
+            <div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--acc)">
+              <span>📊 <b>F&O Option Strategy:</b> Nifty/Stock setup confirm hote hi AI At-The-Money (ATM) <b>CE (Call)</b> ya <b>PE (Put)</b> ka exact <b>Option Premium Entry, SL & Target</b> yahan display karega.</span>
+            </div>
+          ` : ''}
         </div>
       `}
 
