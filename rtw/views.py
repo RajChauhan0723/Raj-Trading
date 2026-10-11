@@ -103,6 +103,26 @@ def mood_view(con, now: datetime, specs: list) -> dict:
     return {"updated": now.isoformat(), "items": items, "flips": (get_setting(con, "mood_flips", []) or [])[-10:]}
 
 
+def calc_sym_change(con, symbol: str, current_price: float | None) -> tuple[float | None, float | None]:
+    try:
+        rows = con.execute("SELECT ts, open, close FROM candles WHERE symbol=? ORDER BY ts DESC LIMIT 85", (symbol,)).fetchall()
+        if not rows:
+            return None, None
+        latest_date = rows[0][0][:10]
+        day_rows = [r for r in rows if r[0][:10] == latest_date]
+        prev_rows = [r for r in rows if r[0][:10] != latest_date]
+        day_open = day_rows[-1][1] if day_rows else rows[-1][1]
+        prev_close = prev_rows[0][2] if prev_rows else day_open
+        last_price = current_price if current_price is not None else rows[0][2]
+        if prev_close and prev_close > 0:
+            chg = round(last_price - prev_close, 2)
+            pct = round((chg / prev_close) * 100.0, 2)
+            return chg, pct
+    except Exception:
+        pass
+    return None, None
+
+
 def markets_view(con, tab: str, now: datetime, settings, specs: list) -> dict:
     dec = load_decisions(con)
     rows = []
@@ -115,14 +135,15 @@ def markets_view(con, tab: str, now: datetime, settings, specs: list) -> dict:
             c_row = con.execute("SELECT close FROM candles WHERE symbol=? ORDER BY ts DESC LIMIT 1", (sp.symbol,)).fetchone()
             if c_row and c_row[0] is not None:
                 price = c_row[0]
+        chg, pct = calc_sym_change(con, sp.symbol, price)
         rows.append({"symbol": sp.symbol, "name": sp.name, "action": d.get("action", "WAIT"), "grade": d.get("grade"),
-                     "confidence": d.get("confidence"), "price": price, "regime": d.get("regime"), "paper": d.get("paper", True),
+                     "confidence": d.get("confidence"), "price": price, "change": chg, "change_pct": pct, "regime": d.get("regime"), "paper": d.get("paper", True),
                      "reasons": (d.get("reasons") or [])[:3], "wait_reason": d.get("wait_reason", ""), "news_mode": d.get("news_mode"),
                      "instrument": d.get("instrument"), "plan": d.get("plan"), "mood": mood_of(d), "open": bool(is_open(sp.segment, now)) if settings.mode != "DEMO" else True})
     active = sorted([r for r in rows if r["action"] in ("BUY", "SELL")], key=lambda r: -(r["confidence"] or 0))
     waits = [r for r in rows if r["action"] not in ("BUY", "SELL")]
     if tab == "stocks":
-        return {"tab": tab, "active": active, "wait_count": len(waits), "waiting": [{"symbol": r["symbol"], "name": r["name"], "price": r.get("price"), "mood": r.get("mood")} for r in waits]}
+        return {"tab": tab, "active": active, "wait_count": len(waits), "waiting": [{"symbol": r["symbol"], "name": r["name"], "price": r.get("price"), "change": r.get("change"), "change_pct": r.get("change_pct"), "mood": r.get("mood")} for r in waits]}
     return {"tab": tab, "active": active, "waiting": waits, "wait_count": len(waits)}
 
 

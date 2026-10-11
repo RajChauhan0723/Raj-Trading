@@ -262,9 +262,22 @@ def chart_payload(df: pd.DataFrame, tf: str = "5m", n: int = 120, levels: list |
         "cpr_type": "NARROW (TRENDING DAY)" if cpr.get("is_narrow") else "WIDE (SIDEWAYS DAY)"
     }
 
+    chg, chg_pct = 0.0, 0.0
+    if len(df) >= 2:
+        last_c = float(df["close"].iloc[-1])
+        days = pd.Series(df.index.date, index=df.index)
+        last_day = days.iloc[-1]
+        prev_df = df[days < last_day]
+        ref_c = float(prev_df["close"].iloc[-1]) if not prev_df.empty else float(df["open"].iloc[0])
+        if ref_c > 0:
+            chg = round(last_c - ref_c, 2)
+            chg_pct = round((chg / ref_c) * 100.0, 2)
+
     return {
         "tf": tf,
         "candles": candles,
+        "change": chg,
+        "change_pct": chg_pct,
         "ema20": [None if e is None else round(float(e), 4) for e in ema20],
         "ema50": [None if e is None else round(float(e), 4) for e in ema50],
         "ema200": [None if e is None else round(float(e), 4) for e in ema200],

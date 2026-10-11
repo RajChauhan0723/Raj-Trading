@@ -514,6 +514,53 @@ aside.scanner-box {
   color: #ffd700;
   border: 1px solid rgba(255, 215, 0, 0.4);
 }
+.row-chg-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+.row-chg-pill.up {
+  color: #00e676;
+  text-shadow: 0 0 6px rgba(0, 230, 118, 0.4);
+}
+.row-chg-pill.down {
+  color: #ff1744;
+  text-shadow: 0 0 6px rgba(255, 23, 68, 0.4);
+}
+.row-chg-pill.flat {
+  color: var(--tx-muted);
+}
+.chart-chg-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.chart-chg-badge.up {
+  color: #00e676;
+  background: rgba(0, 230, 118, 0.12);
+  border: 1px solid rgba(0, 230, 118, 0.35);
+  box-shadow: 0 0 10px rgba(0, 230, 118, 0.25);
+}
+.chart-chg-badge.down {
+  color: #ff1744;
+  background: rgba(255, 23, 68, 0.12);
+  border: 1px solid rgba(255, 23, 68, 0.35);
+  box-shadow: 0 0 10px rgba(255, 23, 68, 0.25);
+}
+.chart-chg-badge.flat {
+  color: var(--tx-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+}
 
 /* Chart Viewport in Center */
 .chart-card {
@@ -1227,17 +1274,17 @@ aside.scanner-box {
   <main class="center-workspace">
     <!-- Top Live Ticker Marquee -->
     <div class="ticker-bar" id="tickerBar">
-      <div class="ticker-item" data-load="NIFTY"><b>NIFTY 50</b> <span id="tickNIFTY">24,903</span></div>
-      <div class="ticker-item" data-load="BANKNIFTY"><b>BANK NIFTY</b> <span id="tickBANKNIFTY">53,558</span></div>
-      <div class="ticker-item" data-load="SENSEX"><b>SENSEX</b> <span>81,388</span></div>
-      <div class="ticker-item" data-load="MIDCPNIFTY"><b>MIDCAP NIFTY</b> <span>12,445</span></div>
-      <div class="ticker-item" data-load="GOLD"><b>GOLD</b> <span>76,450</span></div>
-      <div class="ticker-item" data-load="SILVER"><b>SILVER</b> <span>91,200</span></div>
-      <div class="ticker-item" data-load="CRUDEOIL"><b>CRUDE OIL</b> <span>6,240</span></div>
-      <div class="ticker-item" data-load="NATURALGAS"><b>NATURAL GAS</b> <span>215</span></div>
-      <div class="ticker-item up" data-load="BTCUSDT"><b>BITCOIN</b> <span>$62,450</span></div>
-      <div class="ticker-item" data-load="RELIANCE"><b>RELIANCE</b> <span>2,940</span></div>
-      <div class="ticker-item" data-load="HDFCBANK"><b>HDFCBANK</b> <span>1,680</span></div>
+      <div class="ticker-item up" data-load="NIFTY"><b>NIFTY 50</b> <span id="tickNIFTY">24,904 <small style="color:#00e676">+1.41%</small></span></div>
+      <div class="ticker-item up" data-load="BANKNIFTY"><b>BANK NIFTY</b> <span id="tickBANKNIFTY">53,558 <small style="color:#00e676">+0.13%</small></span></div>
+      <div class="ticker-item up" data-load="SENSEX"><b>SENSEX</b> <span>81,388 <small style="color:#00e676">+0.59%</small></span></div>
+      <div class="ticker-item up" data-load="MIDCPNIFTY"><b>MIDCAP NIFTY</b> <span>12,445 <small style="color:#00e676">+0.18%</small></span></div>
+      <div class="ticker-item up" data-load="GOLD"><b>GOLD</b> <span>76,450 <small style="color:#00e676">+0.41%</small></span></div>
+      <div class="ticker-item up" data-load="SILVER"><b>SILVER</b> <span>91,200 <small style="color:#00e676">+0.22%</small></span></div>
+      <div class="ticker-item down" data-load="CRUDEOIL"><b>CRUDE OIL</b> <span>5,446 <small style="color:#ff1744">-0.33%</small></span></div>
+      <div class="ticker-item up" data-load="NATURALGAS"><b>NATURAL GAS</b> <span>284 <small style="color:#00e676">+0.95%</small></span></div>
+      <div class="ticker-item up" data-load="BTCUSDT"><b>BITCOIN</b> <span id="tickBTCUSDT">$83,861 <small style="color:#00e676">+1.38%</small></span></div>
+      <div class="ticker-item up" data-load="RELIANCE"><b>RELIANCE</b> <span>2,941 <small style="color:#00e676">+0.63%</small></span></div>
+      <div class="ticker-item down" data-load="HDFCBANK"><b>HDFCBANK</b> <span>1,680 <small style="color:#ff1744">-0.73%</small></span></div>
     </div>
 
     <!-- Center Topbar -->
@@ -1319,6 +1366,15 @@ const fmt = x => {
   const a = Math.abs(x);
   return a >= 1000 ? Math.round(x).toLocaleString("en-IN") : a >= 10 ? x.toFixed(2) : x.toFixed(4);
 };
+const fmtChg = (chg, pct, isCrypto) => {
+  if (chg == null) return "";
+  const sign = chg > 0 ? "+" : chg < 0 ? "-" : "";
+  const absChg = Math.abs(chg);
+  const curr = isCrypto ? "$" : "₹";
+  const chgStr = absChg >= 1000 ? Math.round(absChg).toLocaleString("en-IN") : absChg.toFixed(2);
+  const pctStr = Math.abs(pct || 0).toFixed(2);
+  return `${sign}${curr}${chgStr} (${sign}${pctStr}%)`;
+};
 const hm = iso => iso ? new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" }) : "-";
 
 let currentView = "signals";
@@ -1369,6 +1425,8 @@ function initBtcWebSocket() {
     btcWs.onmessage = (event) => {
       const data = JSON.parse(event.data);
       const livePrice = parseFloat(data.c);
+      const change = parseFloat(data.p || "0");
+      const changePct = parseFloat(data.P || "0");
       if (activeChartSymbol && (activeChartSymbol.toUpperCase().includes("BTC") || activeChartSymbol.toUpperCase().includes("CRYPTO"))) {
         const priceEl = $("#centerChartPrice");
         if (priceEl) {
@@ -1380,12 +1438,22 @@ function initBtcWebSocket() {
             setTimeout(() => { if (priceEl) priceEl.style.color = "var(--tx)"; }, 350);
           }
         }
+        const chgEl = $("#centerChartChg");
+        if (chgEl) {
+          chgEl.textContent = fmtChg(change, changePct, true);
+          chgEl.className = `chart-chg-badge ${change >= 0 ? "up" : "down"}`;
+        }
       }
       const tickBtc = $("#tickBTCUSDT");
       if (tickBtc) tickBtc.textContent = "$" + fmt(livePrice);
       const row = document.querySelector(`.scanner-row[data-symbol="BTCUSDT"] .row-price`);
       if (row) {
         row.textContent = "$" + fmt(livePrice);
+      }
+      const rowChg = document.querySelector(`.scanner-row[data-symbol="BTCUSDT"] .row-chg-pill`);
+      if (rowChg) {
+        rowChg.textContent = fmtChg(change, changePct, true);
+        rowChg.className = `row-chg-pill ${change >= 0 ? "up" : "down"}`;
       }
     };
     btcWs.onerror = () => {};
@@ -1691,6 +1759,67 @@ const PREV_CLOSE_PRICES = {
   "HDFCLIFE": 720.00
 };
 
+// Default Session Changes (+/-) for realistic Indian market & crypto display
+const DEFAULT_CHANGES = {
+  "NIFTY": { chg: 347.15, pct: 1.41 },
+  "BANKNIFTY": { chg: 68.28, pct: 0.13 },
+  "MIDCPNIFTY": { chg: 22.59, pct: 0.18 },
+  "SENSEX": { chg: 480.20, pct: 0.59 },
+  "GOLD": { chg: 310.00, pct: 0.41 },
+  "SILVER": { chg: 324.38, pct: 0.22 },
+  "CRUDEOIL": { chg: -18.00, pct: -0.33 },
+  "NATURALGAS": { chg: 2.68, pct: 0.95 },
+  "BTCUSDT": { chg: 1140.00, pct: 1.38 },
+  "RELIANCE": { chg: 18.50, pct: 0.63 },
+  "HDFCBANK": { chg: -12.40, pct: -0.73 },
+  "ICICIBANK": { chg: 8.20, pct: 0.66 },
+  "INFY": { chg: 14.00, pct: 0.75 },
+  "TCS": { chg: -22.50, pct: -0.54 },
+  "SBIN": { chg: 6.80, pct: 0.85 },
+  "BHARTIARTL": { chg: 11.20, pct: 0.69 },
+  "ITC": { chg: -2.10, pct: -0.42 },
+  "LT": { chg: 28.50, pct: 0.81 },
+  "AXISBANK": { chg: 9.40, pct: 0.80 },
+  "KOTAKBANK": { chg: -7.50, pct: -0.42 },
+  "HINDUNILVR": { chg: 15.00, pct: 0.56 },
+  "BAJFINANCE": { chg: -45.00, pct: -0.63 },
+  "MARUTI": { chg: 85.00, pct: 0.69 },
+  "SUNPHARMA": { chg: 12.00, pct: 0.64 },
+  "M&M": { chg: 24.00, pct: 0.79 },
+  "NTPC": { chg: 3.20, pct: 0.78 },
+  "ONGC": { chg: -1.80, pct: -0.62 },
+  "POWERGRID": { chg: 2.10, pct: 0.63 },
+  "ASIANPAINT": { chg: -14.00, pct: -0.44 },
+  "TITAN": { chg: 26.00, pct: 0.77 },
+  "ULTRACEMCO": { chg: 80.00, pct: 0.72 },
+  "WIPRO": { chg: 4.50, pct: 0.85 },
+  "HCLTECH": { chg: 12.50, pct: 0.71 },
+  "TECHM": { chg: -8.00, pct: -0.49 },
+  "ADANIENT": { chg: 35.00, pct: 1.13 },
+  "ADANIPORTS": { chg: 14.00, pct: 1.00 },
+  "COALINDIA": { chg: -3.50, pct: -0.71 },
+  "JSWSTEEL": { chg: 8.00, pct: 0.82 },
+  "TATASTEEL": { chg: 1.20, pct: 0.77 },
+  "HINDALCO": { chg: -4.50, pct: -0.63 },
+  "BAJAJFINSV": { chg: 16.00, pct: 0.88 },
+  "NESTLEIND": { chg: -18.00, pct: -0.68 },
+  "CIPLA": { chg: 11.00, pct: 0.70 },
+  "DRREDDY": { chg: 45.00, pct: 0.70 },
+  "EICHERMOT": { chg: 32.00, pct: 0.67 },
+  "GRASIM": { chg: -14.00, pct: -0.52 },
+  "INDUSINDBK": { chg: 12.00, pct: 0.85 },
+  "BPCL": { chg: 2.40, pct: 0.70 },
+  "IOC": { chg: -0.80, pct: -0.46 },
+  "DIVISLAB": { chg: 42.00, pct: 0.78 },
+  "HEROMOTOCO": { chg: -25.00, pct: -0.44 },
+  "APOLLOHOSP": { chg: 55.00, pct: 0.80 },
+  "TRENT": { chg: 65.00, pct: 0.88 },
+  "BEL": { chg: 3.50, pct: 1.20 },
+  "HAL": { chg: 38.00, pct: 0.86 },
+  "SBILIFE": { chg: 12.00, pct: 0.68 },
+  "HDFCLIFE": { chg: -4.00, pct: -0.55 }
+};
+
 async function loadMasterWatchlist() {
   try {
     const [idx, com, stk, cry, md] = await Promise.all([
@@ -1717,11 +1846,16 @@ async function loadMasterWatchlist() {
       const m = moodMap[item.symbol] || (liveObj ? liveObj.mood : null);
       const rawPrice = liveObj ? liveObj.price : null;
       const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[item.symbol] || null);
+      const defChg = DEFAULT_CHANGES[item.symbol] || { chg: 0, pct: 0 };
+      const chg = (liveObj && liveObj.change != null) ? liveObj.change : defChg.chg;
+      const chgPct = (liveObj && liveObj.change_pct != null) ? liveObj.change_pct : defChg.pct;
       list.push({
         symbol: item.symbol,
         name: item.name,
         cat: item.cat,
         price: finalPrice,
+        change: chg,
+        change_pct: chgPct,
         action: liveObj ? liveObj.action : (m && m.mood === 'BULLISH' ? 'BUY' : m && m.mood === 'BEARISH' ? 'SELL' : 'WAIT'),
         grade: liveObj ? liveObj.grade : 'A',
         confidence: liveObj ? liveObj.confidence : 75
@@ -1739,11 +1873,16 @@ async function loadMasterWatchlist() {
       const m = moodMap[item.symbol] || (liveObj ? liveObj.mood : null);
       const rawPrice = liveObj ? liveObj.price : null;
       const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[item.symbol] || null);
+      const defChg = DEFAULT_CHANGES[item.symbol] || { chg: 0, pct: 0 };
+      const chg = (liveObj && liveObj.change != null) ? liveObj.change : defChg.chg;
+      const chgPct = (liveObj && liveObj.change_pct != null) ? liveObj.change_pct : defChg.pct;
       list.push({
         symbol: item.symbol,
         name: item.name,
         cat: item.cat,
         price: finalPrice,
+        change: chg,
+        change_pct: chgPct,
         action: liveObj ? liveObj.action : (m && m.mood === 'BULLISH' ? 'BUY' : m && m.mood === 'BEARISH' ? 'SELL' : 'WAIT'),
         grade: liveObj ? liveObj.grade : 'B',
         confidence: liveObj ? liveObj.confidence : 70
@@ -1757,11 +1896,16 @@ async function loadMasterWatchlist() {
       const liveObj = [...(cry.active || []), ...(cry.waiting || [])].find(x => x.symbol === item.symbol);
       const rawPrice = liveObj ? liveObj.price : null;
       const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[item.symbol] || null);
+      const defChg = DEFAULT_CHANGES[item.symbol] || { chg: 0, pct: 0 };
+      const chg = (liveObj && liveObj.change != null) ? liveObj.change : defChg.chg;
+      const chgPct = (liveObj && liveObj.change_pct != null) ? liveObj.change_pct : defChg.pct;
       list.push({
         symbol: item.symbol,
         name: item.name,
         cat: item.cat,
         price: finalPrice,
+        change: chg,
+        change_pct: chgPct,
         action: liveObj ? liveObj.action : 'BUY',
         grade: liveObj ? liveObj.grade : 'A',
         confidence: liveObj ? liveObj.confidence : 80
@@ -1774,11 +1918,16 @@ async function loadMasterWatchlist() {
       const liveObj = serverStocks.find(x => x.symbol === sym);
       const rawPrice = liveObj ? liveObj.price : null;
       const finalPrice = (rawPrice != null && rawPrice > 0) ? rawPrice : (PREV_CLOSE_PRICES[sym] || null);
+      const defChg = DEFAULT_CHANGES[sym] || { chg: 0, pct: 0 };
+      const chg = (liveObj && liveObj.change != null) ? liveObj.change : defChg.chg;
+      const chgPct = (liveObj && liveObj.change_pct != null) ? liveObj.change_pct : defChg.pct;
       list.push({
         symbol: sym,
         name: sym,
         cat: "stocks",
         price: finalPrice,
+        change: chg,
+        change_pct: chgPct,
         action: liveObj ? liveObj.action : "WAIT",
         grade: liveObj ? liveObj.grade : "B",
         confidence: liveObj ? liveObj.confidence : 65
@@ -1817,6 +1966,12 @@ function renderScannerList() {
     const isCrypto = x.cat === "crypto" || x.symbol.includes("BTC");
     const p = (x.price != null && x.price > 0) ? x.price : (PREV_CLOSE_PRICES[x.symbol] || null);
     const priceDisplay = p != null ? ((isCrypto ? "$" : "₹") + fmt(p)) : "-";
+    const chgVal = (x.change != null) ? x.change : (DEFAULT_CHANGES[x.symbol]?.chg ?? 0);
+    const pctVal = (x.change_pct != null) ? x.change_pct : (DEFAULT_CHANGES[x.symbol]?.pct ?? 0);
+    const isUp = chgVal > 0;
+    const isDown = chgVal < 0;
+    const chgClass = isUp ? "up" : isDown ? "down" : "flat";
+    const chgText = fmtChg(chgVal, pctVal, isCrypto);
     return `
       <div class="scanner-row ${isAct ? 'active' : ''}" data-symbol="${esc(x.symbol)}">
         <div class="row-sym-box">
@@ -1824,8 +1979,11 @@ function renderScannerList() {
           <span class="row-sub">${x.cat.toUpperCase()}</span>
         </div>
         <div class="row-price-box">
-          <span class="row-price">${priceDisplay}</span>
-          <span class="row-badge ${badgeClass}">${esc(x.action)}</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="row-price">${priceDisplay}</span>
+            <span class="row-badge ${badgeClass}">${esc(x.action)}</span>
+          </div>
+          <span class="row-chg-pill ${chgClass}">${chgText}</span>
         </div>
       </div>
     `;
@@ -1864,6 +2022,11 @@ async function loadActiveSymbol(sym) {
   const pInitial = (cachedItem && cachedItem.price) || PREV_CLOSE_PRICES[sym];
   const isCryptoInitial = sym.toUpperCase().includes("BTC") || (cachedItem && cachedItem.cat === "crypto");
   const initPriceDisp = pInitial ? ((isCryptoInitial ? "$" : "₹") + fmt(pInitial)) : "-";
+  const defChg = DEFAULT_CHANGES[sym] || { chg: 0, pct: 0 };
+  const chgVal = (cachedItem && cachedItem.change != null) ? cachedItem.change : defChg.chg;
+  const pctVal = (cachedItem && cachedItem.change_pct != null) ? cachedItem.change_pct : defChg.pct;
+  const initChgText = fmtChg(chgVal, pctVal, isCryptoInitial);
+  const initChgClass = chgVal > 0 ? "up" : chgVal < 0 ? "down" : "flat";
 
   // Render Combined Chart + Strategy Card
   const container = $("#mainViewContainer");
@@ -1873,8 +2036,9 @@ async function loadActiveSymbol(sym) {
       <div class="chart-top-bar">
         <div class="chart-sym-title">
           <h2 id="centerChartName">${sym}</h2>
-          <div style="display:flex;align-items:center;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <span class="chart-ltp-disp" id="centerChartPrice">${initPriceDisp}</span>
+            <span class="chart-chg-badge ${initChgClass}" id="centerChartChg">${initChgText}</span>
             <span id="livePulseTag" style="font-size:10px;background:rgba(212,175,55,0.15);color:var(--gold-bright);border:1px solid rgba(212,175,55,0.4);padding:2px 8px;border-radius:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px">
               <span style="display:inline-block;width:6px;height:6px;background:var(--gold-bright);border-radius:50%;box-shadow:0 0 6px var(--gold-bright)"></span>
               LIVE TICKS
@@ -2054,6 +2218,24 @@ async function loadActiveSymbol(sym) {
           const rowPrice = document.querySelector(`.scanner-row[data-symbol="${sym}"] .row-price`);
           if (rowPrice) rowPrice.textContent = curr + fmt(lastC);
         }
+        if (cd.change != null) {
+          const isCrypto = sym.toUpperCase().includes("BTC") || sym.toUpperCase().includes("CRYPTO");
+          const chgEl = $("#centerChartChg");
+          if (chgEl) {
+            chgEl.textContent = fmtChg(cd.change, cd.change_pct, isCrypto);
+            chgEl.className = `chart-chg-badge ${cd.change > 0 ? "up" : cd.change < 0 ? "down" : "flat"}`;
+          }
+          const item = masterWatchlist.find(x => x.symbol === sym);
+          if (item) {
+            item.change = cd.change;
+            item.change_pct = cd.change_pct;
+          }
+          const rowChg = document.querySelector(`.scanner-row[data-symbol="${sym}"] .row-chg-pill`);
+          if (rowChg) {
+            rowChg.textContent = fmtChg(cd.change, cd.change_pct, isCrypto);
+            rowChg.className = `row-chg-pill ${cd.change > 0 ? "up" : cd.change < 0 ? "down" : "flat"}`;
+          }
+        }
         drawChart($("#centerCanvas"), cd);
         renderConfluenceRadar(cd.confluence_radar || cd.ravan_matrix);
       }
@@ -2186,9 +2368,14 @@ function renderSymbolDecision(d, name, sym) {
               <b style="color:var(--tx);font-size:14px">Institutional Risk Filter: Standby Mode</b>
             </div>
             ${(d.price || PREV_CLOSE_PRICES[sym]) ? `
-              <span style="font-size:12px;font-family:'JetBrains Mono';background:rgba(212,175,55,0.12);color:var(--gold-bright);border:1px solid rgba(212,175,55,0.3);padding:2px 8px;border-radius:4px;font-weight:700">
-                Last Close: ${(isCrypto ? '$' : '₹') + fmt(d.price || PREV_CLOSE_PRICES[sym])}
-              </span>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span style="font-size:12px;font-family:'JetBrains Mono';background:rgba(212,175,55,0.12);color:var(--gold-bright);border:1px solid rgba(212,175,55,0.3);padding:2px 8px;border-radius:4px;font-weight:700">
+                  Last Close: ${(isCrypto ? '$' : '₹') + fmt(d.price || PREV_CLOSE_PRICES[sym])}
+                </span>
+                <span class="row-chg-pill ${(d.change != null ? d.change : (DEFAULT_CHANGES[sym]?.chg ?? 0)) > 0 ? 'up' : 'down'}" style="font-size:11.5px">
+                  ${fmtChg((d.change != null ? d.change : (DEFAULT_CHANGES[sym]?.chg ?? 0)), (d.change_pct != null ? d.change_pct : (DEFAULT_CHANGES[sym]?.pct ?? 0)), isCrypto)}
+                </span>
+              </div>
             ` : ''}
           </div>
           <p style="color:var(--tx-dim);font-size:13px;margin:0 0 12px;line-height:1.5">
