@@ -97,12 +97,17 @@ def levels_layer(df: pd.DataFrame, n: int = 20) -> LayerResult:
     prior = df.iloc[-(n + 1):-1]
     hi, lo, c = float(prior["high"].max()), float(prior["low"].min()), float(df["close"].iloc[-1])
     bb = ta.bollinger(df["close"])
+    # Volume confirmation: breakout without volume is a fakeout — downgrade score
+    vol_z = _last(ta.zscore(df["volume"], 20), 0.0)
+    vol_confirmed = vol_z >= 0.8  # at least 0.8 std above average to confirm breakout
     if c > hi:
-        r.score, r.conf = 1.0, 0.8
-        r.reasons.append(f"{n}-bar high breakout")
+        score = 1.0 if vol_confirmed else 0.45  # weak breakout without volume
+        r.score, r.conf = score, 0.8 if vol_confirmed else 0.45
+        r.reasons.append(f"{n}-bar high breakout" + ("" if vol_confirmed else " (volume weak, possible fakeout)"))
     elif c < lo:
-        r.score, r.conf = -1.0, 0.8
-        r.reasons.append(f"{n}-bar low breakdown")
+        score = -1.0 if vol_confirmed else -0.45
+        r.score, r.conf = score, 0.8 if vol_confirmed else 0.45
+        r.reasons.append(f"{n}-bar low breakdown" + ("" if vol_confirmed else " (volume weak, possible fakeout)"))
     else:
         pos = (c - lo) / max(hi - lo, 1e-12)
         r.score = (pos - 0.5) * 0.6
@@ -148,6 +153,47 @@ def pattern_layer(df: pd.DataFrame) -> LayerResult:
     return r.clipped()
 
 
+def stoch_rsi_layer(df: pd.DataFrame) -> LayerResult:
+    """StochRSI K/D crossover + oversold/overbought. Extra momentum confluence — eliminates false RSI signals."""
+    r = LayerResult("stoch_rsi")
+    if len(df) < 60:
+        return r
+    c = df["close"]
+    sr = ta.stoch_rsi(c, 14, 3, 3)
+    k, d = _last(sr["k"], 50.0), _last(sr["d"], 50.0)
+    k_prev = float(sr["k"].iloc[-2]) if len(sr) > 1 and not pd.isna(sr["k"].iloc[-2]) else k
+    d_prev = float(sr["d"].iloc[-2]) if len(sr) > 1 and not pd.isna(sr["d"].iloc[-2]) else d
+    if pd.isna(k) or pd.isna(d):
+        return r
+    # Crossover signal: K crosses above D = bullish momentum, K crosses below D = bearish
+    cross_up = (k > d) and (k_prev <= d_prev)
+    cross_dn = (k < d) and (k_prev >= d_prev)
+    score = 0.0
+    conf = 0.6
+    if k < 20 and d < 20:
+        score = 0.7   # oversold zone — strong buy momentum coming
+        r.reasons.append(f"StochRSI oversold ({k:.0f}) — reversal zone")
+        conf = 0.75
+    elif k > 80 and d > 80:
+        score = -0.7  # overbought zone — exhaustion
+        r.reasons.append(f"StochRSI overbought ({k:.0f}) — exhaustion zone")
+        conf = 0.75
+    elif cross_up:
+        score = 0.55
+        r.reasons.append(f"StochRSI bullish crossover (K={k:.0f} D={d:.0f})")
+    elif cross_dn:
+        score = -0.55
+        r.reasons.append(f"StochRSI bearish crossover (K={k:.0f} D={d:.0f})")
+    else:
+        # No crossover — just direction
+        score = 0.3 * np.sign(k - 50)
+        r.reasons.append(f"StochRSI K={k:.0f} D={d:.0f}")
+        conf = 0.45
+    r.score = score
+    r.conf = conf
+    return r.clipped()
+
+
 def chart_layers(df: pd.DataFrame, intraday: bool = False) -> dict:
     return {l.name: l for l in (trend_layer(df, intraday), momentum_layer(df), levels_layer(df),
-                                volume_layer(df), pattern_layer(df))}
+                                volume_layer(df), pattern_layer(df), stoch_rsi_layer(df))}

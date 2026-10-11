@@ -2,25 +2,28 @@
 from __future__ import annotations
 import numpy as np
 
-LAYERS = ["trend", "momentum", "levels", "zones", "volume", "patterns", "options", "smart", "global", "news"]
+LAYERS = ["trend", "momentum", "levels", "zones", "volume", "patterns", "options", "smart", "global", "news", "stoch_rsi"]
 
 # default weights per asset class and regime (relative; re-normalised over layers that are actually available)
 _BASE = {
-    "INDEX":     {"trend": .20, "momentum": .12, "levels": .10, "zones": .08, "volume": .05, "patterns": .05, "options": .20, "smart": .10, "global": .10, "news": .08},
-    "STOCK":     {"trend": .22, "momentum": .12, "levels": .12, "zones": .08, "volume": .12, "patterns": .06, "options": .00, "smart": .18, "global": .06, "news": .12},
-    "COMMODITY": {"trend": .22, "momentum": .12, "levels": .10, "zones": .08, "volume": .06, "patterns": .05, "options": .00, "smart": .13, "global": .20, "news": .12},
-    "FOREX":     {"trend": .24, "momentum": .12, "levels": .12, "zones": .08, "volume": .02, "patterns": .06, "options": .00, "smart": .04, "global": .22, "news": .18},
-    "CRYPTO":    {"trend": .24, "momentum": .12, "levels": .12, "zones": .08, "volume": .08, "patterns": .06, "options": .04, "smart": .18, "global": .06, "news": .10},
+    "INDEX":     {"trend": .18, "momentum": .10, "levels": .09, "zones": .08, "volume": .05, "patterns": .05, "options": .18, "smart": .09, "global": .09, "news": .07, "stoch_rsi": .12},
+    "STOCK":     {"trend": .20, "momentum": .10, "levels": .10, "zones": .07, "volume": .10, "patterns": .05, "options": .00, "smart": .16, "global": .05, "news": .10, "stoch_rsi": .12},
+    "COMMODITY": {"trend": .20, "momentum": .10, "levels": .09, "zones": .07, "volume": .05, "patterns": .04, "options": .00, "smart": .11, "global": .17, "news": .10, "stoch_rsi": .12},
+    "FOREX":     {"trend": .21, "momentum": .10, "levels": .10, "zones": .07, "volume": .02, "patterns": .05, "options": .00, "smart": .04, "global": .19, "news": .15, "stoch_rsi": .12},
+    "CRYPTO":    {"trend": .21, "momentum": .10, "levels": .10, "zones": .07, "volume": .07, "patterns": .05, "options": .03, "smart": .15, "global": .05, "news": .08, "stoch_rsi": .12},
 }
 _REGIME_MULT = {  # regime adjusts how much chart layers matter
-    "TREND":    {"trend": 1.3, "momentum": 1.0, "levels": 1.1, "zones": 0.9, "patterns": 0.8},
-    "RANGE":    {"trend": 0.6, "momentum": 1.0, "levels": 0.8, "zones": 1.4, "patterns": 1.2},
-    "VOLATILE": {"trend": 0.9, "momentum": 0.8, "levels": 0.9, "volume": 1.2, "news": 1.2},
+    "TREND":    {"trend": 1.3, "momentum": 1.0, "levels": 1.1, "zones": 0.9, "patterns": 0.8, "stoch_rsi": 1.1},
+    "RANGE":    {"trend": 0.6, "momentum": 1.0, "levels": 0.8, "zones": 1.4, "patterns": 1.2, "stoch_rsi": 1.3},
+    "VOLATILE": {"trend": 0.9, "momentum": 0.8, "levels": 0.9, "volume": 1.2, "news": 1.2, "stoch_rsi": 0.9},
 }
 PROFILES = {  # default profile = conservative
-    "conservative": {"s_min": 0.45, "a_min": 0.70, "min_layers": 5, "rr_min": 2.0, "grade_a": (0.60, 0.80), "grade_b": (0.50, 0.70)},
-    "moderate":     {"s_min": 0.38, "a_min": 0.62, "min_layers": 4, "rr_min": 1.7, "grade_a": (0.60, 0.80), "grade_b": (0.50, 0.70)},
-    "aggressive":   {"s_min": 0.30, "a_min": 0.55, "min_layers": 4, "rr_min": 1.5, "grade_a": (0.60, 0.80), "grade_b": (0.50, 0.70)},
+    "conservative": {"s_min": 0.45, "a_min": 0.70, "min_layers": 5, "rr_min": 2.0, "grade_a": (0.60, 0.80), "grade_b": (0.50, 0.70),
+                     "range_s_min": 0.55},  # RANGE market me stricter threshold
+    "moderate":     {"s_min": 0.38, "a_min": 0.62, "min_layers": 4, "rr_min": 1.7, "grade_a": (0.60, 0.80), "grade_b": (0.50, 0.70),
+                     "range_s_min": 0.48},
+    "aggressive":   {"s_min": 0.30, "a_min": 0.55, "min_layers": 4, "rr_min": 1.5, "grade_a": (0.60, 0.80), "grade_b": (0.50, 0.70),
+                     "range_s_min": 0.40},
 }
 
 

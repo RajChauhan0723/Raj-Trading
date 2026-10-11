@@ -10,6 +10,7 @@ from .db import get_setting
 from .news import news_mode
 from .sessions import IST
 from .views import home_view, mood_view, markets_view, record_view, news_view, health_view, TABS
+from .analytics import analytics_view
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
 
@@ -83,6 +84,11 @@ def create_app(orc, now_fn=lambda: datetime.now(IST)) -> FastAPI:
     @app.get("/api/record")
     def record():
         return record_view(orc.con)
+
+    @app.get("/api/analytics")
+    def analytics():
+        now = now_fn()
+        return analytics_view(orc.con, now)
 
     @app.post("/api/reset_halt")
     def reset_halt():

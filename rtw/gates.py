@@ -43,10 +43,12 @@ def evaluate_gates(g: GateInput) -> list[GateResult]:
     out.append(GateResult("news_clear", news_ok,
                           "koi bada event paas nahi" if news_ok else (g.news_lock_reason or "news lock / shock mode")))
     out.append(GateResult("regime_fit", g.regime in g.allowed_regimes, f"regime {g.regime}"))
-    agree_ok = abs(g.S) >= p["s_min"] and g.A >= p["a_min"] and g.n_avail >= p["min_layers"]
+    # RANGE market me stricter S threshold — chop market me false signals cut karo
+    effective_s_min = p.get("range_s_min", p["s_min"]) if g.regime == "RANGE" else p["s_min"]
+    agree_ok = abs(g.S) >= effective_s_min and g.A >= p["a_min"] and g.n_avail >= p["min_layers"]
     out.append(GateResult("layer_agreement", agree_ok,
                           f"S={abs(g.S):.2f} A={g.A:.2f} layers={g.n_avail}" if agree_ok else
-                          f"agreement kam: S={abs(g.S):.2f}/{p['s_min']} A={g.A:.2f}/{p['a_min']} layers={g.n_avail}/{p['min_layers']}"))
+                          f"agreement kam: S={abs(g.S):.2f}/{effective_s_min} A={g.A:.2f}/{p['a_min']} layers={g.n_avail}/{p['min_layers']}"))
     out.append(GateResult("risk_reward", g.rr >= p["rr_min"] - 1e-9, f"R:R 1:{g.rr:.1f} (min 1:{p['rr_min']})"))
     if g.setup_expectancy is None or g.setup_trades < g.min_setup_trades:
         if g.paper:
