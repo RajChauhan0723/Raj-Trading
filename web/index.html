@@ -69,6 +69,56 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+/* Real-Time Price Tick Blinking / Flash Effects */
+@keyframes flashGreen {
+  0% { background: rgba(0, 230, 118, 0.45); color: #00e676; text-shadow: 0 0 10px #00e676; }
+  100% { background: transparent; }
+}
+@keyframes flashRed {
+  0% { background: rgba(255, 23, 68, 0.45); color: #ff1744; text-shadow: 0 0 10px #ff1744; }
+  100% { background: transparent; }
+}
+.tick-up {
+  animation: flashGreen 0.8s cubic-bezier(0.1, 0.9, 0.2, 1);
+  border-radius: 4px;
+}
+.tick-down {
+  animation: flashRed 0.8s cubic-bezier(0.1, 0.9, 0.2, 1);
+  border-radius: 4px;
+}
+.price-pulse-live {
+  display: inline-block;
+  transition: all 0.25s ease;
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+/* VIP Live Alert Banner */
+.vip-top-banner {
+  background: linear-gradient(135deg, rgba(20, 15, 5, 0.96), rgba(8, 9, 14, 0.98));
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.22);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+.vip-top-banner.has-buy {
+  border-color: rgba(0, 230, 118, 0.65);
+  box-shadow: 0 0 30px rgba(0, 230, 118, 0.3);
+  background: linear-gradient(135deg, rgba(0, 36, 18, 0.96), rgba(5, 12, 8, 0.98));
+}
+.vip-top-banner.has-sell {
+  border-color: rgba(255, 23, 68, 0.65);
+  box-shadow: 0 0 30px rgba(255, 23, 68, 0.3);
+  background: linear-gradient(135deg, rgba(38, 6, 12, 0.96), rgba(12, 5, 8, 0.98));
+}
+
 /* Sleek Luxury Dark Gold Scrollbars (Eliminates ugly Windows 17px bar that squished the list) */
 ::-webkit-scrollbar {
   width: 5px;
@@ -1411,6 +1461,8 @@ aside.scanner-box {
         </div>
         <span class="pull-refresh-text" id="pullRefreshText">Pull down to refresh...</span>
       </div>
+      <!-- LIVE VIP ACTIVE SIGNAL HUD (AUTO-POLL /api/home) -->
+      <div id="vipLiveBannerArea"></div>
       <div id="mainViewContainer"></div>
     </div>
   </main>
@@ -2150,7 +2202,14 @@ function updateTopTickerBar(list) {
       const pctStr = Math.abs(data.change_pct || 0).toFixed(2);
       const sign = isUp ? "+" : "-";
       const col = isUp ? "#00e676" : "#ff1744";
-      el.innerHTML = `${pStr} <small style="color:${col};font-weight:700">${sign}${pctStr}%</small>`;
+
+      const prevP = parseFloat(el.dataset.p || "0");
+      let flashClass = "";
+      if (prevP && data.price > prevP) flashClass = "tick-up";
+      else if (prevP && data.price < prevP) flashClass = "tick-down";
+      el.dataset.p = data.price;
+
+      el.innerHTML = `<span class="price-pulse-live ${flashClass}">${pStr}</span> <small style="color:${col};font-weight:700">${sign}${pctStr}%</small>`;
       const parent = el.closest(".ticker-item");
       if (parent) {
         parent.className = `ticker-item ${isUp ? "up" : "down"}`;
@@ -2158,6 +2217,8 @@ function updateTopTickerBar(list) {
     }
   });
 }
+
+window.prevScannerPrices = {};
 
 function renderScannerList() {
   const container = $("#scannerList");
@@ -2177,6 +2238,8 @@ function renderScannerList() {
     return;
   }
 
+  const prevMap = window.prevScannerPrices || {};
+
   container.innerHTML = filtered.map(x => {
     const isAct = x.symbol === activeChartSymbol;
     const isUsd = x.cat === "crypto" || x.symbol.includes("BTC") || x.symbol === "XAUUSD";
@@ -2188,6 +2251,11 @@ function renderScannerList() {
     const isDown = chgVal < 0;
     const chgClass = isUp ? "up" : isDown ? "down" : "flat";
     const chgText = fmtChg(chgVal, pctVal, isUsd);
+
+    let tickFlash = "";
+    if (prevMap[x.symbol] != null && prevMap[x.symbol] !== p) {
+      tickFlash = p > prevMap[x.symbol] ? "tick-up" : "tick-down";
+    }
 
     // Action badge: ONLY show BUY (green) or SELL (red). NO "WAIT" badges!
     let badgeHtml = "";
@@ -2205,7 +2273,7 @@ function renderScannerList() {
         </div>
         <div class="row-price-box">
           <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
-            <span class="row-price">${priceDisplay}</span>
+            <span class="row-price ${tickFlash}">${priceDisplay}</span>
             ${badgeHtml}
           </div>
           <span class="row-chg-pill ${chgClass}">${chgText}</span>
@@ -2213,6 +2281,12 @@ function renderScannerList() {
       </div>
     `;
   }).join("");
+
+  window.prevScannerPrices = {};
+  filtered.forEach(x => {
+    const p = (x.price != null && x.price > 0) ? x.price : (PREV_CLOSE_PRICES[x.symbol] || 500);
+    window.prevScannerPrices[x.symbol] = p;
+  });
 
   // Bind Clicks on Scanner Rows
   container.querySelectorAll(".scanner-row").forEach(row => {
@@ -2331,12 +2405,10 @@ async function loadActiveSymbol(sym) {
     </div>
 
     <!-- Active Trade / Decision Card for this symbol -->
-    <div id="symbolDecisionArea">
-      <div class="signal-box is-wait">
-        <div style="color:var(--tx-muted)">AI Signal analysis load ho raha hai...</div>
-      </div>
-    </div>
+    <div id="symbolDecisionArea"></div>
   `;
+
+  renderDefaultWaitNotice(sym);
 
   // Bind Mode Toggle buttons
   const btnC = $("#btnModeCanvas");
@@ -3140,9 +3212,73 @@ window.addEventListener("orientationchange", () => {
   }, 120);
 });
 
+// ---------------- VIP HOME SIGNAL RADAR (AUTO-POLL /api/home) ----------------
+async function checkVipHomeSignal() {
+  try {
+    const home = await api("/api/home");
+    const bannerArea = $("#vipLiveBannerArea");
+    if (!bannerArea) return;
+
+    if (home && home.trade && (home.status === "NEW" || home.status === "ACTIVE")) {
+      const t = home.trade;
+      const isBuy = t.action === "BUY";
+      const isSell = t.action === "SELL";
+      const curr = (t.symbol || "").toUpperCase().includes("BTC") ? "$" : "₹";
+      const pVal = t.live?.price || t.entry_lo;
+      const pStr = curr + fmt(pVal);
+      const diffPts = t.live?.pts != null ? ` (${t.live.pts >= 0 ? '+' : ''}${t.live.pts.toFixed(1)} pts)` : '';
+
+      bannerArea.innerHTML = `
+        <div class="vip-top-banner ${isBuy ? 'has-buy' : 'has-sell'}">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${isBuy ? '#00e676' : '#ff1744'};box-shadow:0 0 12px ${isBuy ? '#00e676' : '#ff1744'}"></span>
+              <b style="font-size:14.5px;color:var(--tx);letter-spacing:0.5px">⚡ LIVE VIP TRADE:</b>
+              <span class="sig-action-pill ${isBuy ? 'pill-buy' : 'pill-sell'}" style="font-size:12px;padding:3px 10px">
+                ${esc(t.symbol)} — ${esc(t.action)} (${esc(t.grade)} Grade, ${esc(t.confidence)}% Conf)
+              </span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;font-family:'JetBrains Mono',monospace;font-size:13px;flex-wrap:wrap">
+              <span>Entry: <b style="color:var(--gold-bright)">${fmt(t.entry_lo)} - ${fmt(t.entry_hi)}</b></span>
+              <span>SL: <b style="color:var(--sell)">${fmt(t.sl)}</b></span>
+              <span>Target: <b style="color:var(--buy)">${fmt(t.t1)}</b></span>
+              ${t.live?.price ? `<span>LTP: <b style="color:${isBuy ? '#00e676' : '#ff1744'}">${pStr}${diffPts}</b></span>` : ''}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <button class="scanner-tab-btn active" id="btnViewVipSignalChart" style="padding:6px 14px;font-weight:700;background:linear-gradient(135deg, #ffd700, #d4af37);color:#050505;box-shadow:0 0 12px rgba(212,175,55,0.4)">
+              📈 Open ${esc(t.symbol)} Chart
+            </button>
+            <button class="scanner-tab-btn" data-copy="🎯 RTW VIP CALL: ${t.symbol} ${t.action}\nEntry: ${fmt(t.entry_lo)} - ${fmt(t.entry_hi)}\nSL: ${fmt(t.sl)}\nTarget 1: ${fmt(t.t1)}\nTarget 2: ${fmt(t.t2)}\nStatus: ${t.state}" style="padding:6px 12px">
+              📋 Copy Signal
+            </button>
+          </div>
+        </div>
+      `;
+      const btn = $("#btnViewVipSignalChart");
+      if (btn) btn.onclick = () => loadActiveSymbol(t.symbol);
+    } else {
+      bannerArea.innerHTML = `
+        <div style="background:rgba(212,175,55,0.03);border:1px dashed rgba(212,175,55,0.22);border-radius:10px;padding:8px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ffd700;box-shadow:0 0 8px #ffd700"></span>
+            <span style="font-size:12px;color:var(--gold-bright);font-weight:700">⚡ AI CONFLUENCE RADAR ACTIVE</span>
+            <span style="font-size:12px;color:var(--tx-dim)">75+ Assets Monitored Live • Confluence trigger hone par yahan automatic VIP Trade Call aayegi</span>
+          </div>
+          <span style="font-size:11px;color:var(--gold-bright);font-family:'JetBrains Mono',monospace;font-weight:700;background:rgba(212,175,55,0.12);padding:2px 8px;border-radius:4px">PROFILE: MODERATE</span>
+        </div>
+      `;
+    }
+  } catch(e) {
+    console.error("VIP Home check err", e);
+  }
+}
+
 // INITIALIZE
 loadMasterWatchlist();
 setInterval(loadMasterWatchlist, 2500);
+checkVipHomeSignal();
+setInterval(checkVipHomeSignal, 3000);
 startChartPolling();
 loadActiveSymbol("NIFTY");
 initPullToRefresh();

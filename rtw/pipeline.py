@@ -440,28 +440,22 @@ class Orchestrator:
         sp = self.resolve(q, now)
         if sp is None:
             return {"found": False, "message": "Symbol samajh nahi aaya"}
-        from .sessions import is_open
-        mkt_open = self.demo or is_open(sp.segment, now, self.provider.holidays())
         cached = load_decisions(self.con).get(sp.symbol)
-        if cached and not mkt_open:
+        if cached:
             cached = dict(cached)
             if not cached.get("price"):
                 c_row = self.con.execute("SELECT close FROM candles WHERE symbol=? ORDER BY ts DESC LIMIT 1", (sp.symbol,)).fetchone()
                 if c_row and c_row[0] is not None:
                     cached["price"] = c_row[0]
             cached["info_only"] = True
-            cached["note"] = "Market abhi closed hai. Yeh last session ka calculated setup hai."
             return {"found": True, "symbol": sp.symbol, "name": sp.name, "decision": cached}
         df = load_df(self.con, sp.symbol, "5m", 60)
         has_data = df is not None and len(df) >= 30
-        if not has_data or mkt_open:
-            # If market is open or we don't have local data, refresh
-            if not has_data:
-                if not self.refresh_symbol(sp, now):
-                    return {"found": False, "symbol": sp.symbol, "message": f"{sp.symbol} ka data nahi mila"}
+        if not has_data:
+            if not self.refresh_symbol(sp, now):
+                return {"found": False, "symbol": sp.symbol, "message": f"{sp.symbol} ka data nahi mila"}
         d = self.analyze_spec(sp, now, self.context(now), get_setup_stats(self.con), load_protections(self.con))
         d["info_only"] = True
-        d["note"] = "Search result: sirf jaankari. Home ke trades alag se chalte hain."
         return {"found": True, "symbol": sp.symbol, "name": sp.name, "decision": d}
 
     def chart(self, q: str, now: datetime, tf: str = "5m", strike: float | None = None, cp: str | None = None, expiry: str | None = None) -> dict:
