@@ -12,12 +12,12 @@ MARKET_BASELINES: dict[str, dict] = {
     "SENSEX": {"name": "BSE Sensex", "price": 81388.40, "prev_close": 80908.20, "change": 480.20, "change_pct": 0.59, "segment": "BSE"},
 
     # MCX & Global Commodities
-    "GOLD": {"name": "Gold (MCX 1kg)", "price": 76450.00, "prev_close": 76140.00, "change": 310.00, "change_pct": 0.41, "segment": "MCX"},
-    "GOLDM": {"name": "Gold Mini (MCX 100g)", "price": 76420.00, "prev_close": 76115.00, "change": 305.00, "change_pct": 0.40, "segment": "MCX"},
-    "XAUUSD": {"name": "Spot Gold (XAU/USD)", "price": 2658.50, "prev_close": 2645.20, "change": 13.30, "change_pct": 0.50, "segment": "GLOBAL"},
-    "SILVER": {"name": "Silver / Silver Mini", "price": 91200.00, "prev_close": 90875.62, "change": 324.38, "change_pct": 0.36, "segment": "MCX"},
-    "CRUDEOIL": {"name": "Crude Oil", "price": 6240.00, "prev_close": 6258.00, "change": -18.00, "change_pct": -0.29, "segment": "MCX"},
-    "NATURALGAS": {"name": "Natural Gas", "price": 215.40, "prev_close": 212.72, "change": 2.68, "change_pct": 1.26, "segment": "MCX"},
+    "GOLD": {"name": "Gold (MCX 1kg)", "price": 149834.00, "prev_close": 151503.00, "change": -1669.00, "change_pct": -1.10, "segment": "MCX"},
+    "GOLDM": {"name": "Gold Mini (MCX 100g)", "price": 148570.00, "prev_close": 150171.00, "change": -1601.00, "change_pct": -1.07, "segment": "MCX"},
+    "XAUUSD": {"name": "Spot Gold (USA)", "price": 4197.00, "prev_close": 4229.70, "change": -32.70, "change_pct": -0.77, "segment": "GLOBAL"},
+    "SILVER": {"name": "Silver (MCX)", "price": 225950.00, "prev_close": 227946.00, "change": -1996.00, "change_pct": -0.88, "segment": "MCX"},
+    "CRUDEOIL": {"name": "Crude Oil", "price": 8911.00, "prev_close": 8890.00, "change": 21.00, "change_pct": 0.24, "segment": "MCX"},
+    "NATURALGAS": {"name": "Natural Gas", "price": 302.10, "prev_close": 313.70, "change": -11.60, "change_pct": -3.70, "segment": "MCX"},
 
     # Currency Pairs (CDS)
     "USDINR": {"name": "USD/INR", "price": 88.54, "prev_close": 88.48, "change": 0.06, "change_pct": 0.07, "segment": "CDS_INR"},
