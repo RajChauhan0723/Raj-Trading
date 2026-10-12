@@ -49,7 +49,8 @@ def build_plan(direction: str, price: float, atr: float, swing_low: float, swing
     # nearest blocking level between entry and raw T1 (levels closer than 0.3 ATR are ignored)
     lv = sorted([r for r in resistances if r > price + 0.3 * atr]) if long else sorted([s for s in supports if s < price - 0.3 * atr], reverse=True)
     if lv and ((lv[0] < t1) if long else (lv[0] > t1)):
-        t1 = lv[0] - sgn * 0.1 * atr
+        if abs(lv[0] - price) >= 1.25 * sl_dist:
+            t1 = lv[0] - sgn * 0.1 * atr
     rr = abs(t1 - price) / sl_dist
     t2_raw = price + sgn * max(3.0, rr_min + 1.0) * sl_dist
     beyond = [x for x in lv if ((x > t1) if long else (x < t1))]
