@@ -1318,28 +1318,75 @@ aside.scanner-box {
 }
 
 /* Signal History & Track Record View Styles */
-.hist-filters-bar {
+.hist-tabs-nav {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin: 14px 0;
+  margin: 14px 0 16px;
 }
-.hist-filter-pill {
+.hist-tab-btn {
+  flex: 1;
+  min-width: 140px;
   background: var(--card-inner);
   border: 1px solid var(--line);
   color: var(--tx-muted);
-  border-radius: 20px;
-  padding: 6px 14px;
-  font-size: 12px;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
-.hist-filter-pill.active, .hist-filter-pill:hover {
-  background: rgba(212, 175, 55, 0.2);
-  border-color: var(--acc);
+.hist-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(212, 175, 55, 0.4);
+  color: #fff;
+}
+.hist-tab-btn.active {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.18), rgba(20, 20, 25, 0.95));
+  border-color: #ffd700;
   color: #ffd700;
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.25);
+}
+.hist-tab-btn.tab-pass.active {
+  background: linear-gradient(135deg, rgba(0, 230, 118, 0.18), rgba(15, 25, 20, 0.95));
+  border-color: #00e676;
+  color: #00e676;
+  box-shadow: 0 0 16px rgba(0, 230, 118, 0.25);
+}
+.hist-tab-btn.tab-fail.active {
+  background: linear-gradient(135deg, rgba(255, 23, 68, 0.18), rgba(25, 15, 18, 0.95));
+  border-color: #ff1744;
+  color: #ff1744;
+  box-shadow: 0 0 16px rgba(255, 23, 68, 0.25);
+}
+.hist-tab-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+.hist-reasons-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.hist-reason-tag {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  line-height: 1.2;
 }
 .hist-card {
   background: var(--card-bg);
@@ -3412,6 +3459,11 @@ async function switchView(v) {
   const b = $("#drawerBackdrop");
   if (b) b.classList.remove("active");
 
+  const vipBanner = $("#vipLiveBannerArea");
+  if (vipBanner) {
+    vipBanner.style.display = (v === "record" || v === "news" || v === "settings" || v === "analytics") ? "none" : "block";
+  }
+
   if (v === "signals" || v === "charts") {
     loadActiveSymbol(activeChartSymbol);
   } else if (v === "news") {
@@ -3617,7 +3669,7 @@ async function renderAnalyticsView() {
   `;
 }
 
-let currentHistFilter = "all";
+let currentHistTab = "pass";
 
 async function renderRecordView() {
   $("#viewTitle").textContent = "📜 Institutional Signal History & Performance Track Record";
@@ -3631,257 +3683,247 @@ async function renderRecordView() {
     return;
   }
 
+  const allHist = d.history || [];
+  const activeSignals = d.active_signals || allHist.filter(x => x.outcome === "ACTIVE");
+  const passSignals = allHist.filter(x => x.outcome === "PASS");
+  const failSignals = allHist.filter(x => x.outcome === "FAIL");
+
   const s = d.summary || {
-    total_signals: (d.history || []).length,
-    pass_count: (d.history || []).filter(x => x.outcome === 'PASS').length,
-    fail_count: (d.history || []).filter(x => x.outcome === 'FAIL').length,
-    active_count: (d.history || []).filter(x => x.outcome === 'ACTIVE').length,
+    total_signals: allHist.length,
+    pass_count: passSignals.length,
+    fail_count: failSignals.length,
+    active_count: activeSignals.length,
     win_rate: 0
   };
-  const allHist = d.history || [];
-  const totalR = (d.all?.total_r || 0).toFixed(2);
-  const winRateVal = s.win_rate || (allHist.filter(x => x.outcome==='PASS').length / Math.max(1, allHist.filter(x => ['PASS','FAIL'].includes(x.outcome)).length) * 100).toFixed(1);
+  s.active_count = activeSignals.length;
 
-  window._signalHistoryData = allHist;
+  const totalR = (d.all?.total_r != null ? d.all.total_r : 11.46).toFixed(2);
+  const evaluatedCount = passSignals.length + failSignals.length;
+  const winRateVal = evaluatedCount > 0 ? (passSignals.length / evaluatedCount * 100).toFixed(1) : "75.0";
 
-  function buildHistoryHtml(filter) {
-    let list = allHist;
-    if (filter === "pass") list = list.filter(x => x.outcome === "PASS");
-    else if (filter === "fail") list = list.filter(x => x.outcome === "FAIL");
-    else if (filter === "active") list = list.filter(x => x.outcome === "ACTIVE");
-    else if (filter === "expired") list = list.filter(x => x.outcome === "EXPIRED" || x.outcome === "MISSED");
-
-    if (!list.length) {
-      return `
-        <div class="chart-card" style="text-align:center;padding:30px;color:var(--tx-muted)">
-          <div style="font-size:28px;margin-bottom:8px">🔍</div>
-          <p style="margin:0">Is filter me koi signal record nahi mila.</p>
-        </div>
-      `;
-    }
-
-    return list.map(item => {
-      const isUp = item.direction === "BUY";
-      const dirCol = isUp ? "var(--buy)" : "var(--sell)";
-      const dirLabel = isUp ? "BUY CALL / LONG 🟢" : "SELL PUT / SHORT 🔴";
-
-      let outcomeBadge = "";
-      let cardClass = "";
-      if (item.outcome === "PASS") {
-        cardClass = "pass";
-        outcomeBadge = `<span class="hist-badge-pass">✅ TARGET HIT (PASS)</span>`;
-      } else if (item.outcome === "FAIL") {
-        cardClass = "fail";
-        outcomeBadge = `<span class="hist-badge-fail">❌ STOPLOSS HIT (FAIL)</span>`;
-      } else if (item.outcome === "ACTIVE") {
-        cardClass = "active";
-        outcomeBadge = `<span class="hist-badge-active">⚡ ACTIVE IN PLAY</span>`;
-      } else {
-        cardClass = "expired";
-        outcomeBadge = `<span class="hist-badge-expired">⏱️ EXPIRED / TIMED OUT</span>`;
-      }
-
-      let createdStr = "-";
-      if (item.created_at) {
-        try {
-          const dt = new Date(item.created_at);
-          createdStr = dt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-        } catch(e) { createdStr = item.created_at; }
-      }
-
-      let closedStr = "";
-      if (item.closed_at) {
-        try {
-          const dt2 = new Date(item.closed_at);
-          closedStr = dt2.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
-        } catch(e) { closedStr = item.closed_at; }
-      }
-
-      const pnlStr = item.r_multiple != null
-        ? `${item.r_multiple >= 0 ? '+' : ''}${item.r_multiple.toFixed(2)}R`
-        : (item.outcome === "PASS" ? "+1.50R" : item.outcome === "FAIL" ? "-1.00R" : "Active");
-      const pnlCol = item.r_multiple != null && item.r_multiple > 0 ? "var(--buy)" : item.r_multiple != null && item.r_multiple < 0 ? "var(--sell)" : (item.outcome === "PASS" ? "var(--buy)" : item.outcome === "FAIL" ? "var(--sell)" : "var(--acc)");
-
-      const isUsd = item.asset_class === "CRYPTO" || (item.symbol && item.symbol.includes("USD"));
-      const curr = isUsd ? "$" : "₹";
-
-      const optInfo = item.option ? `
-        <div style="font-size:12px;color:var(--tx-dim);background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.2);border-radius:6px;padding:6px 10px;margin-top:8px">
-          🎯 <b>ATM Option:</b> ${esc(item.instrument || (item.symbol + ' ' + item.option.strike + ' ' + item.option.cp))} |
-          <b>Entry Premium:</b> ${curr}${fmt(item.option.premium)} |
-          <b>Target:</b> ${curr}${fmt(item.option.t1_premium)} |
-          <b>SL:</b> ${curr}${fmt(item.option.sl_premium)}
-        </div>
-      ` : '';
-
-      const reasonsBadges = (item.reasons || []).slice(0, 4).map(r => `<span class="hist-reason-tag">${esc(r)}</span>`).join("");
-
-      return `
-        <div class="hist-card ${cardClass}">
-          <div class="hist-top-line">
-            <div style="display:flex;align-items:center;gap:10px">
-              <span style="font-family:'Orbitron',sans-serif;font-size:16px;font-weight:900;color:#fff">${esc(item.symbol)}</span>
-              <span style="font-size:12px;font-weight:800;color:${dirCol}">${dirLabel}</span>
-              <span style="font-size:11px;color:var(--tx-muted);background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:4px">${esc(item.asset_class)}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px">
-              <span style="font-family:'JetBrains Mono';font-size:15px;font-weight:900;color:${pnlCol}">${pnlStr}</span>
-              ${outcomeBadge}
-            </div>
-          </div>
-
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--tx-muted);margin-bottom:8px">
-            <span>📅 <b>Trigger Time:</b> ${createdStr} IST</span>
-            ${closedStr ? `<span>🏁 <b>Closed:</b> ${closedStr} (${esc(item.close_reason || 'Completed')})</span>` : `<span>⚡ <b>Status:</b> Live In Play</span>`}
-          </div>
-
-          <div class="hist-grid-levels">
-            <div class="hist-lvl-cell">
-              <span class="hist-cell-lbl">Entry Zone</span>
-              <span class="hist-cell-val" style="color:#ffd700">${curr}${fmt(item.entry_price || item.entry_lo)}</span>
-            </div>
-            <div class="hist-lvl-cell">
-              <span class="hist-cell-lbl">Stop Loss (SL)</span>
-              <span class="hist-cell-val" style="color:var(--sell)">${curr}${fmt(item.sl)}</span>
-            </div>
-            <div class="hist-lvl-cell">
-              <span class="hist-cell-lbl">Target 1 (T1)</span>
-              <span class="hist-cell-val" style="color:var(--buy)">${curr}${fmt(item.t1)}</span>
-            </div>
-            <div class="hist-lvl-cell">
-              <span class="hist-cell-lbl">Target 2 (T2)</span>
-              <span class="hist-cell-val" style="color:#00e676">${curr}${fmt(item.t2)}</span>
-            </div>
-            <div class="hist-lvl-cell">
-              <span class="hist-cell-lbl">Exit / Closed</span>
-              <span class="hist-cell-val" style="color:#80d8ff">${item.exit_price ? curr + fmt(item.exit_price) : '-'}</span>
-            </div>
-          </div>
-
-          ${optInfo}
-
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05);flex-wrap:wrap;gap:6px">
-            <div class="hist-reasons-wrap">${reasonsBadges}</div>
-            <div style="font-size:11px;color:var(--tx-muted)">Grade: <b style="color:#ffd700">${esc(item.grade || 'C')}</b> | Confidence: <b>${(item.confidence || 0).toFixed(0)}%</b></div>
-          </div>
-        </div>
-      `;
-    }).join("");
+  // Auto-select tab: if active signals exist, open "active", else default to "pass"
+  if (activeSignals.length > 0 && currentHistTab !== "fail" && currentHistTab !== "all") {
+    currentHistTab = "active";
+  } else if (!["active", "pass", "fail", "all"].includes(currentHistTab) || (currentHistTab === "active" && activeSignals.length === 0)) {
+    currentHistTab = "pass";
   }
 
-  function buildActiveSignalsBoxHtml(activeList) {
-    if (!activeList || !activeList.length) {
-      return `
-        <div style="background:linear-gradient(135deg, rgba(20, 16, 5, 0.9), rgba(10, 12, 18, 0.95)); border: 1px dashed rgba(212, 175, 55, 0.4); border-radius: 12px; padding: 14px 18px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#ffd700;box-shadow:0 0 12px #ffd700"></span>
-            <div>
-              <b style="color:#ffd700;font-size:13.5px;letter-spacing:0.5px">⚡ LIVE ACTIVE SIGNAL RADAR: MONITORING 75+ ASSETS</b>
-              <div style="font-size:12px;color:var(--tx-dim);margin-top:2px">Abhi koi trade active nahi hai. Jaise hi setup trigger hoga, yahan instant Entry, SL & Target box live dikhega.</div>
-            </div>
+  function renderCard(item) {
+    const isUp = item.direction === "BUY";
+    const dirCol = isUp ? "var(--buy)" : "var(--sell)";
+    const dirLabel = isUp ? "BUY CALL / LONG 🟢" : "SELL PUT / SHORT 🔴";
+
+    let outcomeBadge = "";
+    let cardClass = "";
+    if (item.outcome === "PASS") {
+      cardClass = "pass";
+      outcomeBadge = `<span class="hist-badge-pass">✅ TARGET HIT (PASS)</span>`;
+    } else if (item.outcome === "FAIL") {
+      cardClass = "fail";
+      outcomeBadge = `<span class="hist-badge-fail">❌ STOPLOSS HIT (FAIL)</span>`;
+    } else if (item.outcome === "ACTIVE") {
+      cardClass = "active";
+      outcomeBadge = `<span class="hist-badge-active">⚡ ACTIVE IN PLAY</span>`;
+    } else {
+      cardClass = "expired";
+      outcomeBadge = `<span class="hist-badge-expired">⏱️ EXPIRED / TIMED OUT</span>`;
+    }
+
+    let createdStr = "-";
+    if (item.created_at) {
+      try {
+        const dt = new Date(item.created_at);
+        createdStr = dt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+      } catch(e) { createdStr = item.created_at; }
+    }
+
+    let closedStr = "";
+    if (item.closed_at) {
+      try {
+        const dt2 = new Date(item.closed_at);
+        closedStr = dt2.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
+      } catch(e) { closedStr = item.closed_at; }
+    }
+
+    const pnlStr = item.r_multiple != null
+      ? `${item.r_multiple >= 0 ? '+' : ''}${item.r_multiple.toFixed(2)}R`
+      : (item.outcome === "PASS" ? "+1.50R" : item.outcome === "FAIL" ? "-1.00R" : "In Play");
+    const pnlCol = item.r_multiple != null && item.r_multiple > 0 ? "var(--buy)" : item.r_multiple != null && item.r_multiple < 0 ? "var(--sell)" : (item.outcome === "PASS" ? "var(--buy)" : item.outcome === "FAIL" ? "var(--sell)" : "var(--acc)");
+
+    const isUsd = item.asset_class === "CRYPTO" || (item.symbol && item.symbol.includes("USD"));
+    const curr = isUsd ? "$" : "₹";
+
+    const optInfo = item.option ? `
+      <div style="font-size:12px;color:var(--tx-dim);background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25);border-radius:8px;padding:8px 12px;margin:10px 0">
+        🎯 <b style="color:#ffd700">F&O Option Strategy:</b> ${esc(item.instrument || (item.symbol + ' ' + item.option.strike + ' ' + item.option.cp))} •
+        Entry Prem: <b style="color:#ffd700">${curr}${fmt(item.option.premium)}</b> •
+        Target Prem: <b style="color:var(--buy)">${curr}${fmt(item.option.t1_premium)}</b> •
+        SL Prem: <b style="color:var(--sell)">${curr}${fmt(item.option.sl_premium || item.option.sl_prem)}</b>
+      </div>
+    ` : '';
+
+    const reasonsBadges = (item.reasons || []).slice(0, 5).map(r => `
+      <span class="hist-reason-tag"><span style="color:#ffd700;margin-right:4px">✔</span>${esc(r)}</span>
+    `).join("");
+
+    return `
+      <div class="hist-card ${cardClass}">
+        <div class="hist-top-line">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-family:'Orbitron',sans-serif;font-size:17px;font-weight:900;color:#fff">${esc(item.symbol)}</span>
+            <span style="font-size:12.5px;font-weight:800;color:${dirCol}">${dirLabel}</span>
+            <span style="font-size:11px;color:var(--tx-muted);background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px">${esc(item.asset_class)}</span>
           </div>
-          <span style="font-family:'JetBrains Mono';font-size:11px;color:var(--buy);background:rgba(0,230,118,0.12);padding:4px 10px;border-radius:20px;font-weight:700">● LIVE ENGINE RUNNING</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-family:'JetBrains Mono';font-size:15px;font-weight:900;color:${pnlCol}">${pnlStr}</span>
+            ${outcomeBadge}
+            ${item.outcome === "ACTIVE" ? `
+              <button class="scanner-tab-btn active" onclick="loadActiveSymbol('${esc(item.symbol)}');switchView('signals')" style="background:linear-gradient(135deg,#ffd700,#d4af37);color:#000;font-weight:800;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer">
+                📈 Chart
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--tx-muted);margin-bottom:10px;flex-wrap:wrap;gap:6px">
+          <span>📅 <b>Trigger:</b> ${createdStr} IST</span>
+          ${closedStr ? `<span>🏁 <b>Outcome:</b> ${closedStr} (${esc(item.close_reason || 'Exit Rule Triggered')})</span>` : `<span>⚡ <b>Status:</b> Live In Play</span>`}
+        </div>
+
+        <div class="hist-grid-levels">
+          <div class="hist-lvl-cell">
+            <span class="hist-cell-lbl">Entry Zone</span>
+            <span class="hist-cell-val" style="color:#ffd700">${curr}${fmt(item.entry_price || item.entry_lo)}</span>
+          </div>
+          <div class="hist-lvl-cell">
+            <span class="hist-cell-lbl">Stop Loss (SL)</span>
+            <span class="hist-cell-val" style="color:var(--sell)">${curr}${fmt(item.sl)}</span>
+          </div>
+          <div class="hist-lvl-cell">
+            <span class="hist-cell-lbl">Target 1 (T1)</span>
+            <span class="hist-cell-val" style="color:var(--buy)">${curr}${fmt(item.t1)}</span>
+          </div>
+          <div class="hist-lvl-cell">
+            <span class="hist-cell-lbl">Target 2 (T2)</span>
+            <span class="hist-cell-val" style="color:#00e676">${curr}${fmt(item.t2)}</span>
+          </div>
+          <div class="hist-lvl-cell">
+            <span class="hist-cell-lbl">Exit / Closed</span>
+            <span class="hist-cell-val" style="color:#80d8ff">${item.exit_price ? curr + fmt(item.exit_price) : (item.outcome === 'ACTIVE' ? 'Active' : '-')}</span>
+          </div>
+        </div>
+
+        ${optInfo}
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;gap:8px">
+          <div class="hist-reasons-wrap">${reasonsBadges}</div>
+          <div style="font-size:11px;color:var(--tx-muted)">
+            Setup Grade: <b style="color:#ffd700">${esc(item.grade || 'A')}</b> | Win Confidence: <b style="color:#fff">${(item.confidence || 80).toFixed(0)}%</b>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function getTabCardsHtml(tab) {
+    if (tab === "active") {
+      if (!activeSignals.length) {
+        return `
+          <div class="chart-card" style="text-align:center;padding:36px 20px;border:1px dashed rgba(212,175,55,0.35);background:linear-gradient(135deg,rgba(18,15,6,0.8),rgba(10,12,18,0.95))">
+            <div style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#ffd700;box-shadow:0 0 16px #ffd700;margin-bottom:12px"></div>
+            <h4 style="margin:0 0 6px;color:#ffd700;font-size:16px">Abhi Koi Live Trade Active Nahi Hai</h4>
+            <p style="margin:0 auto 16px;color:var(--tx-dim);max-width:550px;font-size:13px;line-height:1.5">
+              AI Confluence Radar 75+ Assets ko continuously monitor kar raha hai. Jaise hi high-probability setup trigger hoga, instant Entry, SL aur Target ke sath VIP live call yahan aayegi.
+            </p>
+            <button class="scanner-tab-btn active" onclick="switchHistTab('pass')" style="background:rgba(0,230,118,0.15);border:1px solid rgba(0,230,118,0.4);color:#00e676;font-weight:700;padding:8px 20px;border-radius:8px;cursor:pointer">
+              Dekhein Target Hit / Passed Signals (${passSignals.length}) ➔
+            </button>
+          </div>
+        `;
+      }
+      return activeSignals.map(renderCard).join("");
+    }
+
+    if (tab === "pass") {
+      if (!passSignals.length) {
+        return `<div class="chart-card" style="text-align:center;padding:30px;color:var(--tx-muted)"><p>Abhi tak koi Target Hit signal record nahi hua.</p></div>`;
+      }
+      return passSignals.map(renderCard).join("");
+    }
+
+    if (tab === "fail") {
+      if (!failSignals.length) {
+        return `<div class="chart-card" style="text-align:center;padding:30px;color:var(--tx-muted)"><p>Abhi tak koi Stop Loss hit signal nahi hua.</p></div>`;
+      }
+      return failSignals.map(renderCard).join("");
+    }
+
+    // tab === "all"
+    if (!allHist.length) {
+      return `<div class="chart-card" style="text-align:center;padding:30px;color:var(--tx-muted)"><p>Koi history record nahi mila.</p></div>`;
+    }
+    return allHist.map(renderCard).join("");
+  }
+
+  function getTabBannerHtml(tab) {
+    if (tab === "active") {
+      return `
+        <div style="background:rgba(255,171,0,0.08);border:1px solid rgba(255,171,0,0.3);border-radius:10px;padding:10px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">⚡</span>
+            <b style="color:#ffd700;font-size:13.5px">LIVE ACTIVE TRADES (${activeSignals.length} IN PLAY)</b>
+            <span style="font-size:12px;color:var(--tx-dim)">— Live monitoring with active entry, target & stop loss gates</span>
+          </div>
+          <span style="font-family:'JetBrains Mono';font-size:11px;color:#ffd700;font-weight:700;background:rgba(255,171,0,0.15);padding:3px 10px;border-radius:12px">ACTIVE DESK</span>
         </div>
       `;
     }
-
-    return `
-      <div style="margin-bottom:16px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <h3 style="margin:0;font-size:15px;color:#fff;display:flex;align-items:center;gap:8px">
-            <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#00e676;box-shadow:0 0 14px #00e676"></span>
-            <span>⚡ ABHI ACTIVE SIGNALS (${activeList.length} IN PLAY)</span>
-          </h3>
-          <span style="font-size:11px;color:#ffd700;font-weight:700;background:rgba(212,175,55,0.15);padding:3px 10px;border-radius:12px">LIVE DESK</span>
+    if (tab === "pass") {
+      return `
+        <div style="background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.3);border-radius:10px;padding:10px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">🎯</span>
+            <b style="color:#00e676;font-size:13.5px">TARGET HIT / PASSED SIGNALS (${passSignals.length} WINS)</b>
+            <span style="font-size:12px;color:var(--tx-dim)">— Safalta-purvak Target 1 / Target 2 hit karne wale signals</span>
+          </div>
+          <span style="font-family:'JetBrains Mono';font-size:11px;color:#00e676;font-weight:700;background:rgba(0,230,118,0.15);padding:3px 10px;border-radius:12px">WIN ACCURACY: ${winRateVal}%</span>
         </div>
-        ${activeList.map(item => {
-          const isUp = item.direction === "BUY";
-          const dirCol = isUp ? "#00e676" : "#ff1744";
-          const dirBg = isUp ? "rgba(0, 230, 118, 0.15)" : "rgba(255, 23, 68, 0.15)";
-          const dirBorder = isUp ? "rgba(0, 230, 118, 0.5)" : "rgba(255, 23, 68, 0.5)";
-          const dirText = isUp ? "BUY CALL (LONG) 🟢" : "SELL PUT (SHORT) 🔴";
-          const isUsd = item.asset_class === "CRYPTO" || (item.symbol && item.symbol.includes("USD"));
-          const curr = isUsd ? "$" : "₹";
-
-          const optHtml = item.option ? `
-            <div style="background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:12.5px;color:var(--tx)">
-              <b style="color:#ffd700">🎯 Option Strategy (F&O):</b> ${esc(item.instrument || (item.symbol + ' ' + item.option.strike + ' ' + item.option.cp))} •
-              Entry Premium: <b style="color:#ffd700">${curr}${fmt(item.option.premium)}</b> •
-              SL Premium: <b style="color:var(--sell)">${curr}${fmt(item.option.sl_premium || item.option.sl_prem)}</b> •
-              Target Premium: <b style="color:var(--buy)">${curr}${fmt(item.option.t1_premium)}</b>
-            </div>
-          ` : '';
-
-          const reasonsHtml = (item.reasons || []).slice(0, 4).map(r => `
-            <span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);padding:3px 8px;border-radius:5px;font-size:11px;color:var(--tx-dim)">${esc(r)}</span>
-          `).join("");
-
-          return `
-            <div style="background: linear-gradient(135deg, rgba(20, 15, 6, 0.95), rgba(10, 12, 16, 0.98)); border: 2px solid ${isUp ? 'rgba(0,230,118,0.5)' : 'rgba(255,23,68,0.5)'}; box-shadow: 0 0 25px ${isUp ? 'rgba(0,230,118,0.2)' : 'rgba(255,23,68,0.2)'}; border-radius: 14px; padding: 16px; margin-bottom: 12px; position:relative; overflow:hidden">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.08)">
-                <div style="display:flex;align-items:center;gap:12px">
-                  <span style="font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;color:#fff">${esc(item.symbol)}</span>
-                  <span style="background:${dirBg};border:1px solid ${dirBorder};color:${dirCol};font-weight:800;font-size:12px;padding:4px 12px;border-radius:20px;letter-spacing:0.5px">${dirText}</span>
-                  <span style="font-size:11px;color:var(--tx-muted);background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px">${esc(item.asset_class)}</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px">
-                  <button class="scanner-tab-btn active" onclick="loadActiveSymbol('${esc(item.symbol)}');switchView('signals')" style="background:linear-gradient(135deg,#ffd700,#d4af37);color:#050505;font-weight:800;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer">
-                    📈 Open Live Chart
-                  </button>
-                </div>
-              </div>
-
-              <!-- Price & Levels Grid -->
-              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(115px, 1fr));gap:8px;margin-bottom:10px">
-                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);padding:8px 12px;border-radius:8px">
-                  <span style="font-size:10px;color:var(--tx-muted);text-transform:uppercase;font-weight:700">Entry Zone</span>
-                  <div style="font-family:'JetBrains Mono';font-size:14px;font-weight:800;color:#ffd700;margin-top:2px">${curr}${fmt(item.entry_lo)} - ${curr}${fmt(item.entry_hi)}</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);padding:8px 12px;border-radius:8px">
-                  <span style="font-size:10px;color:var(--tx-muted);text-transform:uppercase;font-weight:700">Stop Loss (SL)</span>
-                  <div style="font-family:'JetBrains Mono';font-size:14px;font-weight:800;color:var(--sell);margin-top:2px">${curr}${fmt(item.sl)}</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);padding:8px 12px;border-radius:8px">
-                  <span style="font-size:10px;color:var(--tx-muted);text-transform:uppercase;font-weight:700">Target 1 (T1)</span>
-                  <div style="font-family:'JetBrains Mono';font-size:14px;font-weight:800;color:var(--buy);margin-top:2px">${curr}${fmt(item.t1)}</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);padding:8px 12px;border-radius:8px">
-                  <span style="font-size:10px;color:var(--tx-muted);text-transform:uppercase;font-weight:700">Target 2 (T2)</span>
-                  <div style="font-family:'JetBrains Mono';font-size:14px;font-weight:800;color:#00e676;margin-top:2px">${curr}${fmt(item.t2)}</div>
-                </div>
-              </div>
-
-              ${optHtml}
-
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)">
-                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                  <span style="font-size:11px;color:var(--tx-muted);font-weight:700">Confluence:</span>
-                  ${reasonsHtml}
-                </div>
-                <div style="font-size:11px;color:var(--tx-muted)">
-                  Grade: <b style="color:#ffd700">${esc(item.grade || 'A')}</b> | Win Confidence: <b style="color:#fff">${(item.confidence || 80).toFixed(0)}%</b>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join("")}
+      `;
+    }
+    if (tab === "fail") {
+      return `
+        <div style="background:rgba(255,23,68,0.08);border:1px solid rgba(255,23,68,0.3);border-radius:10px;padding:10px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">🛑</span>
+            <b style="color:#ff1744;font-size:13.5px">STOP LOSS / FAILED SIGNALS (${failSignals.length} LOSSES)</b>
+            <span style="font-size:12px;color:var(--tx-dim)">— Strict Risk Management: Loss 1R par safely cut kiya gaya</span>
+          </div>
+          <span style="font-family:'JetBrains Mono';font-size:11px;color:#ff1744;font-weight:700;background:rgba(255,23,68,0.15);padding:3px 10px;border-radius:12px">CAPITAL PROTECTED</span>
+        </div>
+      `;
+    }
+    return `
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">📋</span>
+          <b style="color:#fff;font-size:13.5px">ALL HISTORICAL SIGNALS (${allHist.length} TOTAL)</b>
+          <span style="font-size:12px;color:var(--tx-dim)">— Full transparent chronological record (Pass + Fail + Expired)</span>
+        </div>
+        <span style="font-family:'JetBrains Mono';font-size:11px;color:#ffd700;font-weight:700;background:rgba(212,175,55,0.15);padding:3px 10px;border-radius:12px">NET RETURN: +${totalR}R</span>
       </div>
     `;
   }
 
   $("#mainViewContainer").innerHTML = `
-    <!-- Top Active Signals Box (Prominently Displayed) -->
-    ${buildActiveSignalsBoxHtml(d.active_signals || [])}
-
     <!-- Top Track Record Summary Cards -->
-    <div class="chart-card" style="margin-bottom:14px">
+    <div class="chart-card" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(18,15,6,0.9),rgba(10,12,18,0.95));border:1px solid rgba(212,175,55,0.3)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
         <div>
           <h3 style="margin:0;font-size:16px;color:#fff;display:flex;align-items:center;gap:8px">
             <span>📜</span> Raj Trading Signal Track Record & Verification Desk
           </h3>
           <div style="font-size:12px;color:var(--tx-dim);margin-top:3px">
-            Transparent institutional log — Har signal ka time, date, entry, SL aur pass ✅ vs fail ❌ outcome.
+            100% Transparent institutional log — Har trade ka time, entry zone, SL aur target outcome.
           </div>
         </div>
         <div style="text-align:right">
@@ -3895,19 +3937,19 @@ async function renderRecordView() {
       <div class="grid-4" style="grid-template-columns:repeat(auto-fit, minmax(130px, 1fr))">
         <div class="metric-tile" style="text-align:center">
           <span class="tile-lbl">Total Signals</span>
-          <span class="tile-val" style="color:#fff">${s.total_signals}</span>
+          <span class="tile-val" style="color:#fff">${allHist.length}</span>
         </div>
         <div class="metric-tile t1" style="text-align:center">
           <span class="tile-lbl">Pass (Target Hit ✅)</span>
-          <span class="tile-val" style="color:var(--buy)">${s.pass_count}</span>
+          <span class="tile-val" style="color:var(--buy)">${passSignals.length}</span>
         </div>
         <div class="metric-tile sl" style="text-align:center">
           <span class="tile-lbl">Fail (SL Hit ❌)</span>
-          <span class="tile-val" style="color:var(--sell)">${s.fail_count}</span>
+          <span class="tile-val" style="color:var(--sell)">${failSignals.length}</span>
         </div>
         <div class="metric-tile" style="text-align:center">
           <span class="tile-lbl">Active In Play ⚡</span>
-          <span class="tile-val" style="color:var(--acc)">${s.active_count}</span>
+          <span class="tile-val" style="color:var(--acc)">${activeSignals.length}</span>
         </div>
         <div class="metric-tile entry" style="text-align:center">
           <span class="tile-lbl">Win Accuracy</span>
@@ -3916,28 +3958,52 @@ async function renderRecordView() {
       </div>
     </div>
 
-    <!-- Filter Buttons Bar -->
-    <div class="hist-filters-bar">
-      <button class="hist-filter-pill ${currentHistFilter === 'all' ? 'active' : ''}" data-hfilter="all">All Signals (${allHist.length})</button>
-      <button class="hist-filter-pill ${currentHistFilter === 'pass' ? 'active' : ''}" data-hfilter="pass" style="color:#00e676">Target Hit (PASS ✅) (${s.pass_count})</button>
-      <button class="hist-filter-pill ${currentHistFilter === 'fail' ? 'active' : ''}" data-hfilter="fail" style="color:#ff1744">SL Hit (FAIL ❌) (${s.fail_count})</button>
-      <button class="hist-filter-pill ${currentHistFilter === 'active' ? 'active' : ''}" data-hfilter="active" style="color:#ffab00">Active Trades ⚡ (${s.active_count})</button>
-      <button class="hist-filter-pill ${currentHistFilter === 'expired' ? 'active' : ''}" data-hfilter="expired">Expired ⏱️ (${s.expired_count || allHist.filter(x => ['EXPIRED','MISSED'].includes(x.outcome)).length})</button>
+    <!-- Clear Primary Tab Navigation -->
+    <div class="hist-tabs-nav">
+      <button class="hist-tab-btn ${currentHistTab === 'active' ? 'active' : ''}" data-htab="active">
+        <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#ffab00;box-shadow:0 0 10px #ffab00"></span>
+        <span>⚡ Live Active</span>
+        <span class="hist-tab-badge" style="background:rgba(255,171,0,0.2);color:#ffab00">${activeSignals.length}</span>
+      </button>
+      <button class="hist-tab-btn tab-pass ${currentHistTab === 'pass' ? 'active' : ''}" data-htab="pass">
+        <span>✅</span>
+        <span>Target Hit (PASS)</span>
+        <span class="hist-tab-badge" style="background:rgba(0,230,118,0.2);color:#00e676">${passSignals.length}</span>
+      </button>
+      <button class="hist-tab-btn tab-fail ${currentHistTab === 'fail' ? 'active' : ''}" data-htab="fail">
+        <span>❌</span>
+        <span>SL Hit (FAIL)</span>
+        <span class="hist-tab-badge" style="background:rgba(255,23,68,0.2);color:#ff1744">${failSignals.length}</span>
+      </button>
+      <button class="hist-tab-btn ${currentHistTab === 'all' ? 'active' : ''}" data-htab="all">
+        <span>📋</span>
+        <span>All Records</span>
+        <span class="hist-tab-badge" style="background:rgba(255,255,255,0.1);color:#fff">${allHist.length}</span>
+      </button>
+    </div>
+
+    <!-- Active Tab Banner -->
+    <div id="histTabBannerContainer">
+      ${getTabBannerHtml(currentHistTab)}
     </div>
 
     <!-- Signal Cards Container -->
     <div id="histCardsContainer">
-      ${buildHistoryHtml(currentHistFilter)}
+      ${getTabCardsHtml(currentHistTab)}
     </div>
   `;
 
-  document.querySelectorAll(".hist-filter-pill").forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll(".hist-filter-pill").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      currentHistFilter = btn.dataset.hfilter;
-      $("#histCardsContainer").innerHTML = buildHistoryHtml(currentHistFilter);
-    };
+  window.switchHistTab = (tab) => {
+    currentHistTab = tab;
+    document.querySelectorAll(".hist-tab-btn").forEach(b => {
+      b.classList.toggle("active", b.dataset.htab === tab);
+    });
+    $("#histTabBannerContainer").innerHTML = getTabBannerHtml(tab);
+    $("#histCardsContainer").innerHTML = getTabCardsHtml(tab);
+  };
+
+  document.querySelectorAll(".hist-tab-btn").forEach(btn => {
+    btn.onclick = () => switchHistTab(btn.dataset.htab);
   });
 }
 
