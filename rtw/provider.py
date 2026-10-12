@@ -58,8 +58,9 @@ class FakeProvider(Provider):
         vol = 0.0007 if spec.asset_class != "CRYPTO" else 0.0012
         rets = rng.normal(drift, vol, n)
         start = START_PRICE.get(spec.symbol, 500.0)
-        close = start * np.exp(np.cumsum(rets))
-        open_ = np.r_[start, close[:-1]]
+        cum = np.cumsum(rets)
+        close = start * np.exp(cum - cum[-1])
+        open_ = np.r_[close[0], close[:-1]]
         sp = np.abs(rng.normal(0, vol * 0.6, n)) * close
         return pd.DataFrame({"open": open_, "high": np.maximum(open_, close) + sp, "low": np.minimum(open_, close) - sp,
                              "close": close, "volume": 1000 * (1 + np.abs(rng.normal(0, 0.5, n)))}, index=idx)

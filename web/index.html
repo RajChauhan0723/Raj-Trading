@@ -1851,7 +1851,7 @@ aside.scanner-box {
     <div class="nav-footer">
       <div style="display:flex;justify-content:space-between">
         <span>Angel SmartAPI:</span>
-        <span style="color:var(--buy);font-weight:700">● LIVE</span>
+        <span id="angelFeedStatus" style="color:var(--buy);font-weight:700">● LIVE</span>
       </div>
       <div style="display:flex;justify-content:space-between">
         <span>IST Clock:</span>
@@ -4200,6 +4200,16 @@ window.addEventListener("orientationchange", () => {
 async function checkVipHomeSignal() {
   try {
     const home = await api("/api/home");
+    const af = $("#angelFeedStatus");
+    if (af && home) {
+      if (home.mode === "DEMO") {
+        af.textContent = "● DEMO ENGINE";
+        af.style.color = "#ffd700";
+      } else {
+        af.textContent = "● LIVE ANGEL";
+        af.style.color = "var(--buy)";
+      }
+    }
     const bannerArea = $("#vipLiveBannerArea");
     if (!bannerArea) return;
 
