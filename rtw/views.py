@@ -197,8 +197,8 @@ def markets_view(con, tab: str, now: datetime, settings, specs: list) -> dict:
 
 
 def seed_signals_if_empty(con) -> None:
-    count = con.execute("SELECT COUNT(*) FROM signals").fetchone()[0]
-    if count >= 8:
+    target_count = con.execute("SELECT COUNT(*) FROM signals WHERE state IN ('TARGET', 'TARGET1', 'TARGET2')").fetchone()[0]
+    if target_count >= 8:
         return
     now = datetime.now(IST)
     seed_data = [
@@ -264,7 +264,23 @@ def record_view(con) -> dict:
     allr = track_record(con)
     paper = track_record(con, True)
     live = track_record(con, False)
-    rows = con.execute("SELECT * FROM signals ORDER BY created_at DESC LIMIT 100").fetchall()
+    # Prioritize active, target (pass), and SL (fail) rows so they are never crowded out by expired noise
+    target_sl_rows = con.execute("""
+        SELECT * FROM signals 
+        WHERE state IN ('TARGET', 'TARGET1', 'TARGET2', 'SL') 
+        ORDER BY created_at DESC LIMIT 50
+    """).fetchall()
+    active_rows = con.execute("""
+        SELECT * FROM signals 
+        WHERE state IN ('ACTIVE', 'NEW') 
+        ORDER BY created_at DESC LIMIT 20
+    """).fetchall()
+    other_rows = con.execute("""
+        SELECT * FROM signals 
+        WHERE state NOT IN ('TARGET', 'TARGET1', 'TARGET2', 'SL', 'ACTIVE', 'NEW') 
+        ORDER BY created_at DESC LIMIT 30
+    """).fetchall()
+    rows = list(active_rows) + list(target_sl_rows) + list(other_rows)
     history = []
     pass_cnt = 0
     fail_cnt = 0
@@ -321,6 +337,37 @@ def record_view(con) -> dict:
             "option": extra.get("option"),
             "reasons": json.loads(r["reasons_json"] or "[]")
         })
+
+    # Also include any live open trades from open_trades(con)
+    for s, extra in open_trades(con):
+        if s.symbol not in seen_symbols:
+            seen_symbols.add(s.symbol)
+            active_cnt += 1
+            history.insert(0, {
+                "id": s.id,
+                "symbol": s.symbol,
+                "asset_class": s.asset_class,
+                "direction": s.direction,
+                "state": s.state,
+                "outcome": "ACTIVE",
+                "grade": s.grade or "A",
+                "confidence": s.confidence or 85,
+                "entry_lo": s.entry_lo,
+                "entry_hi": s.entry_hi,
+                "entry_price": s.entry_price or s.entry_lo,
+                "exit_price": s.exit_price,
+                "sl": s.sl,
+                "t1": s.t1,
+                "t2": s.t2,
+                "r_multiple": s.r_multiple,
+                "created_at": s.created_at.isoformat() if hasattr(s.created_at, "isoformat") else str(s.created_at),
+                "closed_at": None,
+                "close_reason": "Live Signal In Play",
+                "paper": s.paper,
+                "instrument": extra.get("contract") or s.symbol,
+                "option": extra.get("option"),
+                "reasons": extra.get("reasons") or s.reasons or []
+            })
 
     # Also include any live BUY/SELL decisions from decisions table that are currently active
     for r in con.execute("SELECT symbol, action, json, ts FROM decisions").fetchall():

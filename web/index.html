@@ -418,6 +418,34 @@ main.center-workspace {
   border-radius: 99px;
   margin-left: 2px;
 }
+.live-dot-pulse {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffd700;
+  box-shadow: 0 0 8px #ffd700;
+  animation: pulseGoldDot 1.4s infinite alternate ease-in-out;
+}
+@keyframes pulseGoldDot {
+  0% { transform: scale(0.85); box-shadow: 0 0 4px #ffd700; }
+  100% { transform: scale(1.2); box-shadow: 0 0 14px #ffd700; }
+}
+.top-tab-badge.badge-active {
+  background: rgba(255, 215, 0, 0.22);
+  color: #ffd700;
+  border-color: rgba(255, 215, 0, 0.55);
+}
+.top-tab-badge.badge-pass {
+  background: rgba(0, 230, 118, 0.2);
+  color: #00e676;
+  border-color: rgba(0, 230, 118, 0.5);
+}
+.top-tab-badge.badge-fail {
+  background: rgba(255, 23, 68, 0.2);
+  color: #ff1744;
+  border-color: rgba(255, 23, 68, 0.5);
+}
 
 /* Scrollable Workspace */
 .workspace-scroll {
@@ -1934,18 +1962,33 @@ main.center-workspace {
 
         <!-- Top Navigation View Tabs -->
         <nav class="top-nav-tabs">
-          <button class="top-nav-tab active" data-v="signals" id="tabNavSignals">
-            <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            <span>Pro Chart & Calls</span>
+          <button class="top-nav-tab active" data-v="active" id="tabNavActive">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffab00;box-shadow:0 0 8px #ffab00"></span>
+            <span>⚡ Live Active</span>
+            <span class="top-tab-badge badge-active" id="topActiveBadge">3</span>
           </button>
-          <button class="top-nav-tab" data-v="record" id="tabNavRecord">
+          <button class="top-nav-tab" data-v="pass" id="tabNavPass">
+            <span>✅</span>
+            <span>Target Hit (PASS)</span>
+            <span class="top-tab-badge badge-pass" id="topPassBadge">8</span>
+          </button>
+          <button class="top-nav-tab" data-v="fail" id="tabNavFail">
+            <span>❌</span>
+            <span>SL Hit (FAIL)</span>
+            <span class="top-tab-badge badge-fail" id="topFailBadge">6</span>
+          </button>
+          <button class="top-nav-tab" data-v="signals" id="tabNavSignals">
+            <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span>📈 Pro Chart & Calls</span>
+          </button>
+          <button class="top-nav-tab" data-v="all" id="tabNavRecord">
             <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            <span>Signal History</span>
-            <span class="top-tab-badge" id="topHistBadge">11</span>
+            <span>📋 All Records</span>
+            <span class="top-tab-badge" id="topHistBadge">47</span>
           </button>
           <button class="top-nav-tab" data-v="settings" id="tabNavSettings">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            <span>Settings</span>
+            <span>⚙️ Settings</span>
           </button>
         </nav>
       </div>
@@ -3220,15 +3263,18 @@ async function switchView(v) {
 
   const vipBanner = $("#vipLiveBannerArea");
   if (vipBanner) {
-    vipBanner.style.display = (v === "record" || v === "news" || v === "settings" || v === "analytics") ? "none" : "block";
+    vipBanner.style.display = (v === "record" || v === "news" || v === "settings" || v === "analytics" || v === "active" || v === "pass" || v === "fail" || v === "all") ? "none" : "block";
   }
 
   if (v === "signals" || v === "charts") {
     loadActiveSymbol(activeChartSymbol);
+  } else if (v === "active" || v === "pass" || v === "fail" || v === "all" || v === "record") {
+    if (v === "active" || v === "pass" || v === "fail" || v === "all") {
+      currentHistTab = v;
+    }
+    renderRecordView();
   } else if (v === "news") {
     renderNewsView();
-  } else if (v === "record") {
-    renderRecordView();
   } else if (v === "analytics") {
     renderAnalyticsView();
   } else if (v === "settings") {
@@ -3443,10 +3489,14 @@ async function renderRecordView() {
   }
 
   const allHist = d.history || [];
-  if ($("#topHistBadge")) $("#topHistBadge").textContent = allHist.length;
   const activeSignals = d.active_signals || allHist.filter(x => x.outcome === "ACTIVE");
   const passSignals = allHist.filter(x => x.outcome === "PASS");
   const failSignals = allHist.filter(x => x.outcome === "FAIL");
+
+  if ($("#topHistBadge")) $("#topHistBadge").textContent = allHist.length;
+  if ($("#topActiveBadge")) $("#topActiveBadge").textContent = activeSignals.length;
+  if ($("#topPassBadge")) $("#topPassBadge").textContent = passSignals.length;
+  if ($("#topFailBadge")) $("#topFailBadge").textContent = failSignals.length;
 
   const s = d.summary || {
     total_signals: allHist.length,
@@ -3461,12 +3511,15 @@ async function renderRecordView() {
   const evaluatedCount = passSignals.length + failSignals.length;
   const winRateVal = evaluatedCount > 0 ? (passSignals.length / evaluatedCount * 100).toFixed(1) : "75.0";
 
-  // Auto-select tab: if active signals exist, open "active", else default to "pass"
-  if (activeSignals.length > 0 && currentHistTab !== "fail" && currentHistTab !== "all") {
-    currentHistTab = "active";
-  } else if (!["active", "pass", "fail", "all"].includes(currentHistTab) || (currentHistTab === "active" && activeSignals.length === 0)) {
-    currentHistTab = "pass";
+  // Tab selection: keep current tab if valid, else pick active if in-play exists, else pass
+  if (!["active", "pass", "fail", "all"].includes(currentHistTab)) {
+    currentHistTab = activeSignals.length > 0 ? "active" : "pass";
   }
+
+  // Sync top nav active state
+  document.querySelectorAll(".top-nav-tab").forEach(l => {
+    l.classList.toggle("active", l.dataset.v === currentHistTab || (currentHistTab === "all" && l.dataset.v === "all"));
+  });
 
   function renderCard(item) {
     const isUp = item.direction === "BUY";
@@ -3755,6 +3808,9 @@ async function renderRecordView() {
 
   window.switchHistTab = (tab) => {
     currentHistTab = tab;
+    document.querySelectorAll(".top-nav-tab").forEach(l => {
+      l.classList.toggle("active", l.dataset.v === tab || (tab === "all" && l.dataset.v === "all"));
+    });
     document.querySelectorAll(".hist-tab-btn").forEach(b => {
       b.classList.toggle("active", b.dataset.htab === tab);
     });
@@ -4169,16 +4225,21 @@ async function syncTopHistoryBadge() {
   try {
     const d = await api("/api/record");
     const allHist = d.history || [];
-    const badge = $("#topHistBadge");
-    if (badge) badge.textContent = allHist.length;
+    const activeList = d.active_signals || allHist.filter(x => x.outcome === "ACTIVE");
+    const passList = allHist.filter(x => x.outcome === "PASS");
+    const failList = allHist.filter(x => x.outcome === "FAIL");
+    if ($("#topHistBadge")) $("#topHistBadge").textContent = allHist.length;
+    if ($("#topActiveBadge")) $("#topActiveBadge").textContent = activeList.length;
+    if ($("#topPassBadge")) $("#topPassBadge").textContent = passList.length;
+    if ($("#topFailBadge")) $("#topFailBadge").textContent = failList.length;
   } catch(e) {}
 }
 syncTopHistoryBadge();
-setInterval(syncTopHistoryBadge, 30000);
+setInterval(syncTopHistoryBadge, 15000);
 checkVipHomeSignal();
 setInterval(checkVipHomeSignal, 3000);
 startChartPolling();
-loadActiveSymbol("NIFTY");
+switchView("active");
 initPullToRefresh();
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js?v=" + Date.now()).catch(() => {});
