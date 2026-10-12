@@ -43,8 +43,13 @@ def evaluate_gates(g: GateInput) -> list[GateResult]:
     out.append(GateResult("news_clear", news_ok,
                           "koi bada event paas nahi" if news_ok else (g.news_lock_reason or "news lock / shock mode")))
     out.append(GateResult("regime_fit", g.regime in g.allowed_regimes, f"regime {g.regime}"))
-    # RANGE market me stricter S threshold — chop market me false signals cut karo
-    effective_s_min = p.get("range_s_min", p["s_min"]) if g.regime == "RANGE" else p["s_min"]
+    # RANGE market me stricter S threshold — lekin agar 5+ layers aur 70%+ agreement ho toh high conviction confirmed move hai
+    if g.A >= 0.70 and g.n_avail >= 5:
+        effective_s_min = min(p["s_min"], 0.30)
+    elif g.regime == "RANGE":
+        effective_s_min = p.get("range_s_min", p["s_min"])
+    else:
+        effective_s_min = p["s_min"]
     agree_ok = abs(g.S) >= effective_s_min and g.A >= p["a_min"] and g.n_avail >= p["min_layers"]
     out.append(GateResult("layer_agreement", agree_ok,
                           f"S={abs(g.S):.2f} A={g.A:.2f} layers={g.n_avail}" if agree_ok else

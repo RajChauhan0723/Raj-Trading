@@ -200,15 +200,83 @@ def record_view(con) -> dict:
     allr = track_record(con)
     paper = track_record(con, True)
     live = track_record(con, False)
-    rows = con.execute("SELECT * FROM signals WHERE kind='TRADE' AND state IN ('TARGET','SL','EXPIRED','MISSED') ORDER BY created_at DESC LIMIT 30").fetchall()
-    last = [{"symbol": r["symbol"], "direction": r["direction"], "state": r["state"], "r": r["r_multiple"], "paper": bool(r["paper"]),
-             "closed_at": r["closed_at"], "reason": r["close_reason"]} for r in rows]
+    rows = con.execute("SELECT * FROM signals ORDER BY created_at DESC LIMIT 100").fetchall()
+    history = []
+    pass_cnt = 0
+    fail_cnt = 0
+    active_cnt = 0
+    expired_cnt = 0
+
+    for r in rows:
+        st = r["state"]
+        r_mult = r["r_multiple"]
+        # Determine PASS (Target Hit) / FAIL (Stoploss Hit) / ACTIVE / EXPIRED
+        if st == "TARGET":
+            outcome = "PASS"
+            pass_cnt += 1
+        elif st == "SL":
+            outcome = "FAIL"
+            fail_cnt += 1
+        elif st in ("ACTIVE", "NEW"):
+            outcome = "ACTIVE"
+            active_cnt += 1
+        else:
+            outcome = "EXPIRED" if st == "EXPIRED" else "MISSED"
+            expired_cnt += 1
+
+        extra = {}
+        try:
+            extra = json.loads(r["extra_json"] or "{}")
+        except Exception:
+            pass
+
+        history.append({
+            "id": r["id"],
+            "symbol": r["symbol"],
+            "asset_class": r["asset_class"],
+            "direction": r["direction"],
+            "state": st,
+            "outcome": outcome,
+            "grade": r["grade"] or "C",
+            "confidence": r["confidence"] or 0,
+            "entry_lo": r["entry_lo"],
+            "entry_hi": r["entry_hi"],
+            "entry_price": r["entry_price"],
+            "exit_price": r["exit_price"],
+            "sl": r["sl"],
+            "t1": r["t1"],
+            "t2": r["t2"],
+            "r_multiple": r_mult,
+            "created_at": r["created_at"],
+            "closed_at": r["closed_at"],
+            "close_reason": r["close_reason"] or "",
+            "paper": bool(r["paper"]),
+            "instrument": extra.get("contract") or (extra.get("option", {}).get("strike") and f"{r['symbol']} {extra['option']['strike']} {extra['option']['cp']}") or r["symbol"],
+            "option": extra.get("option"),
+            "reasons": json.loads(r["reasons_json"] or "[]")
+        })
+
+    total_eval = pass_cnt + fail_cnt
+    win_rate = (pass_cnt / total_eval * 100.0) if total_eval > 0 else 0.0
+
     eq, cum = [], 0.0
-    for r in con.execute("SELECT r_multiple, closed_at FROM signals WHERE kind='TRADE' AND r_multiple IS NOT NULL ORDER BY closed_at"):
+    for r in con.execute("SELECT r_multiple, closed_at FROM signals WHERE r_multiple IS NOT NULL ORDER BY closed_at"):
         cum += r[0]
         eq.append({"t": r[1], "cum_r": round(cum, 3)})
     setups = [dict(r) for r in con.execute("SELECT * FROM setup_stats ORDER BY expectancy_r DESC")]
-    return {"all": allr, "paper": paper, "live": live, "last": last, "equity": eq, "setups": setups}
+    return {
+        "all": allr, "paper": paper, "live": live,
+        "history": history, "last": history[:30],
+        "summary": {
+            "total_signals": len(rows),
+            "pass_count": pass_cnt,
+            "fail_count": fail_cnt,
+            "active_count": active_cnt,
+            "expired_count": expired_cnt,
+            "win_rate": round(win_rate, 1)
+        },
+        "equity": eq, "setups": setups
+    }
 
 
 def news_view(con, provider, now: datetime, events: list, mode_info: dict) -> dict:

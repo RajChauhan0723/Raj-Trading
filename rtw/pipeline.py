@@ -147,7 +147,7 @@ class Orchestrator:
             if chain:
                 extra["options"] = options_layer(chain.get("spot") or float(df["close"].iloc[-1]), chain["rows"], chain.get("iv_pct"))
         lot, cap = self._engine_lot_and_capital(spec, ctx)
-        want_option = bool(chain)
+        want_option = bool(chain or spec.has_options or spec.asset_class == "INDEX")
         age = data_age_sec(df, now)
         ok_prot, why_prot = prot.can_trade(now)
 
@@ -155,7 +155,8 @@ class Orchestrator:
             return analyze(spec.symbol, spec.asset_class, df, now, capital=cap, risk_pct=self.st.risk_pct, lot_size=lot,
                            profile=self.st.profile, segment=seg, intraday=True, extra_layers=extra, tags=ctx["tags"], events=ctx["events"],
                            data_age_sec=age, setup_expectancy=exp, setup_trades=ntr, paper=paper, daily_loss_hit=prot.daily_loss_hit(now),
-                           protections_ok=(ok_prot, why_prot), vix_z=(ctx["vix_z"] if spec.segment == "NSE" else None), holidays=self.provider.holidays(), skip_afford=want_option)
+                           protections_ok=(ok_prot, why_prot), vix_z=(ctx["vix_z"] if spec.segment == "NSE" else None), holidays=self.provider.holidays(),
+                           skip_afford=(want_option or spec.asset_class == "INDEX" or paper))
 
         args = (True, None, 0)
         d = run(*args)
@@ -211,6 +212,39 @@ class Orchestrator:
             return d
         if chain:
             return self._option_conversion(spec, d, chain, now)
+        if spec.has_options and not chain:
+            spot = d.get("price") or (pl["entry_lo"] + pl["entry_hi"]) / 2
+            step = 50 if spec.symbol == "NIFTY" else 100 if spec.symbol in ("BANKNIFTY", "SENSEX") else 25 if spec.symbol == "MIDCPNIFTY" else max(1.0, round(spot * 0.01))
+            strike = round(spot / step) * step
+            cp = "CE" if d["action"] == "BUY" else "PE"
+            delta = 0.50
+            atr_v = d.get("atr") or max(10.0, pl["sl_dist"] / 1.5)
+            approx_prem = max(20.0, round(1.3 * atr_v, 1))
+            sl_prem = max(2.0, round(approx_prem - delta * pl["sl_dist"], 1))
+            t1_prem = round(approx_prem + delta * abs(pl["t1"] - spot), 1)
+            t2_prem = round(approx_prem + delta * abs(pl["t2"] - spot), 1)
+            lot = spec.lot or 50
+            lots = max(1, pl.get("lots") or 1)
+            pl["lots"] = lots
+            pl["affordable"] = True
+            opt = {
+                "cp": cp, "strike": strike, "expiry": "Current Expiry", "dte": 3.0,
+                "premium": approx_prem, "sl_prem": sl_prem, "sl_premium": sl_prem,
+                "t1_premium": t1_prem, "t2_premium": t2_prem,
+                "pop": 0.60, "breakeven": strike + approx_prem if cp == "CE" else strike - approx_prem,
+                "expected_move": atr_v * 2.0, "iv": 0.14, "delta": delta, "synthetic": True
+            }
+            d["extra"].update(
+                option=opt, lots=lots, lot_size=lot,
+                max_loss=approx_prem * lot * lots,
+                risk_amount=(approx_prem - sl_prem) * lot * lots
+            )
+            d["instrument"] = f"{spec.symbol} {strike:g} {cp}"
+            return d
+        if pl.get("lots", 0) == 0:
+            pl["lots"] = 1
+            pl["affordable"] = True
+            pl["risk_amount"] = pl["sl_dist"] * (spec.lot or 1)
         d["extra"].update(lots=pl["lots"], risk_amount=pl["risk_amount"])
         if spec.asset_class == "CRYPTO":
             d["extra"].update(qty=pl["lots"] * spec.lot, qty_unit="BTC", currency="USD", risk_amount=pl["risk_amount"])

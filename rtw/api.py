@@ -85,6 +85,81 @@ def create_app(orc, now_fn=lambda: datetime.now(IST)) -> FastAPI:
     def record():
         return record_view(orc.con)
 
+    @app.get("/api/signals/history")
+    def signals_history():
+        rows = orc.con.execute("""
+            SELECT id, symbol, asset_class, direction, kind, state, grade, confidence, paper,
+                   entry_price, entry_lo, entry_hi, exit_price, sl, t1, t2, created_at, closed_at, r_multiple, close_reason,
+                   reasons_json, extra_json
+            FROM signals
+            ORDER BY created_at DESC
+            LIMIT 50
+        """).fetchall()
+        items = []
+        pass_cnt = 0
+        fail_cnt = 0
+        active_cnt = 0
+        expired_cnt = 0
+
+        for r in rows:
+            st = r["state"]
+            res = "ACTIVE"
+            if st in ("TARGET", "TARGET1", "TARGET2"):
+                res = "PASS"
+                pass_cnt += 1
+            elif st == "SL":
+                res = "FAIL"
+                fail_cnt += 1
+            elif st in ("ACTIVE", "NEW"):
+                res = "ACTIVE"
+                active_cnt += 1
+            else:
+                res = "EXPIRED"
+                expired_cnt += 1
+
+            extra = {}
+            try:
+                extra = json.loads(r["extra_json"] or "{}")
+            except Exception:
+                pass
+
+            items.append({
+                "id": r["id"],
+                "symbol": r["symbol"],
+                "asset_class": r["asset_class"],
+                "direction": r["direction"],
+                "state": st,
+                "result": res,
+                "grade": r["grade"] or "B",
+                "confidence": r["confidence"] or 0,
+                "entry": r["entry_price"] or r["entry_lo"],
+                "exit": r["exit_price"],
+                "sl": r["sl"],
+                "t1": r["t1"],
+                "t2": r["t2"],
+                "r_multiple": r["r_multiple"],
+                "reason": r["close_reason"] or "",
+                "created_at": r["created_at"],
+                "closed_at": r["closed_at"],
+                "instrument": extra.get("contract") or (extra.get("option", {}).get("strike") and f"{r['symbol']} {extra['option']['strike']} {extra['option']['cp']}") or r["symbol"]
+            })
+
+        total_eval = pass_cnt + fail_cnt
+        win_rate = round((pass_cnt / total_eval * 100.0), 1) if total_eval > 0 else 0.0
+
+        return {
+            "items": items,
+            "total": len(items),
+            "summary": {
+                "total": len(items),
+                "pass": pass_cnt,
+                "fail": fail_cnt,
+                "active": active_cnt,
+                "expired": expired_cnt,
+                "win_rate": win_rate
+            }
+        }
+
     @app.get("/api/analytics")
     def analytics():
         now = now_fn()

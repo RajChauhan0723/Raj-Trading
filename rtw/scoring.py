@@ -17,13 +17,13 @@ _REGIME_MULT = {  # regime adjusts how much chart layers matter
     "RANGE":    {"trend": 0.6, "momentum": 1.0, "levels": 0.8, "zones": 1.4, "patterns": 1.2, "stoch_rsi": 1.3},
     "VOLATILE": {"trend": 0.9, "momentum": 0.8, "levels": 0.9, "volume": 1.2, "news": 1.2, "stoch_rsi": 0.9},
 }
-PROFILES = {  # default profile = conservative
-    "conservative": {"s_min": 0.45, "a_min": 0.70, "min_layers": 5, "rr_min": 2.0, "grade_a": (0.60, 0.80), "grade_b": (0.50, 0.70),
-                     "range_s_min": 0.55},  # RANGE market me stricter threshold
-    "moderate":     {"s_min": 0.38, "a_min": 0.62, "min_layers": 4, "rr_min": 1.7, "grade_a": (0.60, 0.80), "grade_b": (0.50, 0.70),
-                     "range_s_min": 0.48},
-    "aggressive":   {"s_min": 0.30, "a_min": 0.55, "min_layers": 4, "rr_min": 1.5, "grade_a": (0.60, 0.80), "grade_b": (0.50, 0.70),
-                     "range_s_min": 0.40},
+PROFILES = {  # default profile = moderate
+    "conservative": {"s_min": 0.40, "a_min": 0.65, "min_layers": 4, "rr_min": 1.8, "grade_a": (0.60, 0.80), "grade_b": (0.50, 0.70),
+                     "range_s_min": 0.46},
+    "moderate":     {"s_min": 0.28, "a_min": 0.58, "min_layers": 4, "rr_min": 1.5, "grade_a": (0.55, 0.75), "grade_b": (0.45, 0.65),
+                     "range_s_min": 0.34},
+    "aggressive":   {"s_min": 0.25, "a_min": 0.52, "min_layers": 3, "rr_min": 1.5, "grade_a": (0.50, 0.70), "grade_b": (0.40, 0.60),
+                     "range_s_min": 0.30},
 }
 
 
