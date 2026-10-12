@@ -56,7 +56,7 @@ def get_settings() -> Settings:
     g = os.environ.get
     return Settings(
         mode=g("RTW_MODE", "DEMO").upper(), capital=_f("RTW_CAPITAL", 100000), risk_pct=_f("RTW_RISK_PCT", 0.01),
-        profile=g("RTW_PROFILE", "conservative").lower(), db_path=g("RTW_DB", "rtw.db"), access_key=g("RTW_ACCESS_KEY", ""),
+        profile=g("RTW_PROFILE", "moderate").lower(), db_path=g("RTW_DB", "rtw.db"), access_key=g("RTW_ACCESS_KEY", ""),
         telegram_token=g("TELEGRAM_BOT_TOKEN", ""), telegram_chat_id=g("TELEGRAM_CHAT_ID", ""),
         angel_api_key=g("ANGEL_API_KEY", ""), angel_client_code=g("ANGEL_CLIENT_CODE", ""), angel_pin=g("ANGEL_PIN", ""),
         angel_totp_secret=g("ANGEL_TOTP_SECRET", ""), fred_key=g("FRED_API_KEY", ""),

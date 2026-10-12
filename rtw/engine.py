@@ -23,7 +23,7 @@ def confidence_pct(S: float, A: float) -> int:
 def analyze(symbol: str, asset_class: str, df: pd.DataFrame, now: datetime, *, capital: float, risk_pct: float, lot_size: int,
             profile: str = "conservative", segment: str | None = None, intraday: bool = True,
             extra_layers: dict | None = None, tags: list | None = None, events: list | None = None,
-            data_age_sec: float = 0.0, max_data_age_sec: float = 120.0,
+            data_age_sec: float = 0.0, max_data_age_sec: float = 900.0,
             setup_expectancy: float | None = None, setup_trades: int = 0, paper: bool = False,
             daily_loss_hit: bool = False, protections_ok: tuple = (True, "ok"),
             vix_z: float | None = None, gpr_z: float | None = None, shock: bool = False,

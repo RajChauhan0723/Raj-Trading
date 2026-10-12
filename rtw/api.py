@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from .db import get_setting
@@ -142,6 +142,10 @@ def create_app(orc, now_fn=lambda: datetime.now(IST)) -> FastAPI:
         except Exception:
             pass
         return {"ok": True, "symbol": sym, "action": action, "broadcasted": True}
+
+    @app.get("/api/webhook/tradingview")
+    def tv_webhook_get():
+        return RedirectResponse(url="/", status_code=303)
 
     @app.get("/api/scanner/master")
     def scanner_master():
